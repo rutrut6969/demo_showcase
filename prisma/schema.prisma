@@ -1,0 +1,435 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleName {
+  SUPER_ADMIN
+  ADMIN
+  SITE_OVERSEER
+}
+
+enum RequestStatus {
+  NEW
+  AI_REVIEWED
+  UNDER_REVIEW
+  APPROVED
+  INVOICE_SENT
+  DEPOSIT_PAID
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+  DENIED
+  REVISION_REQUESTED
+}
+
+enum ComplexityLevel {
+  LOW
+  MODERATE
+  HIGH
+  CUSTOM_ENTERPRISE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  AI_GENERATED
+  ADMIN_REVIEWED
+  SENT
+  VIEWED
+  APPROVED
+  REVISION_REQUESTED
+  DENIED
+  DEPOSIT_PAID
+  PAID
+  CANCELLED
+}
+
+enum ProjectStage {
+  LEAD
+  QUALIFIED
+  AI_QUOTED
+  CONSULTATION
+  PROPOSAL_SENT
+  INVOICE_PENDING
+  DEPOSIT_PAID
+  DEVELOPMENT
+  REVIEW
+  DEPLOYMENT
+  RETAINER_ACTIVE
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum LogSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+model User {
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  passwordHash   String
+  suspended      Boolean         @default(false)
+  roleId         String
+  role           Role            @relation(fields: [roleId], references: [id])
+  trustedDevices TrustedDevice[]
+  assignedTasks  Task[]          @relation("AssignedTasks")
+  auditLogs      AuditLog[]
+  loginHistory   SiteLog[]       @relation("UserSiteLogs")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        RoleName @unique
+  description String
+  permissions String[]
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TrustedDevice {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  deviceName  String
+  deviceHash  String
+  ipAddress   String?
+  userAgent   String?
+  trusted     Boolean  @default(false)
+  lastSeenAt  DateTime @default(now())
+  approvedAt  DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model Client {
+  id                String           @id @default(cuid())
+  name              String
+  businessName      String?
+  email             String           @unique
+  phone             String?
+  address           String?
+  marketingConsent  Boolean          @default(false)
+  source            String?
+  notes             String?
+  linkedDemoInterest String?
+  projectRequests   ProjectRequest[]
+  projects          Project[]
+  invoices          Invoice[]
+  retainers         Retainer[]
+  mediaAssets       MediaAsset[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([email])
+  @@index([marketingConsent])
+}
+
+model ProjectRequest {
+  id                    String          @id @default(cuid())
+  clientId              String?
+  client                Client?         @relation(fields: [clientId], references: [id])
+  name                  String
+  businessName          String?
+  email                 String
+  phone                 String?
+  businessType          String?
+  selectedDemo          String?
+  demoCategory          String?
+  recommendedPackage    String?
+  sourcePage            String?
+  estimatedComplexity   ComplexityLevel @default(MODERATE)
+  desiredFeatures       String[]
+  budgetRange           String?
+  timeline              String?
+  notes                 String?
+  marketingConsent      Boolean         @default(false)
+  termsAcknowledged     Boolean         @default(false)
+  status                RequestStatus   @default(NEW)
+  assignedToId          String?
+  internalNotes         String?
+  communicationHistory  Json?
+  attachedFiles         String[]
+  aiQuote               AIQuote?
+  invoices              Invoice[]
+  analyticsEvents       AnalyticsEvent[]
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([status])
+  @@index([estimatedComplexity])
+  @@index([selectedDemo])
+}
+
+model AIQuote {
+  id                     String          @id @default(cuid())
+  requestId              String          @unique
+  request                ProjectRequest  @relation(fields: [requestId], references: [id])
+  buildCostMin           Int
+  buildCostMax           Int
+  timeframe              String
+  complexityLevel        ComplexityLevel
+  recommendedPackage     String
+  suggestedRetainerTier  String
+  suggestedAddOns        String[]
+  scopeSummary           String
+  notesForManualReview   String
+  rawResponse            Json?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+}
+
+model Invoice {
+  id                    String            @id @default(cuid())
+  clientId              String?
+  client                Client?           @relation(fields: [clientId], references: [id])
+  requestId             String?
+  request               ProjectRequest?   @relation(fields: [requestId], references: [id])
+  projectId             String?
+  project               Project?          @relation(fields: [projectId], references: [id])
+  status                InvoiceStatus     @default(DRAFT)
+  invoiceNumber         String            @unique
+  projectSummary        String
+  scopeBreakdown        String[]
+  depositDue            Int
+  total                 Int
+  retainerRecommendation String?
+  timelineEstimate      String?
+  terms                 String
+  squareInvoiceId       String?
+  squarePaymentLink     String?
+  viewedAt              DateTime?
+  approvedAt            DateTime?
+  lineItems             InvoiceLineItem[]
+  payments              PaymentRecord[]
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+}
+
+model InvoiceLineItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int     @default(1)
+  unitAmount  Int
+  totalAmount Int
+}
+
+model PaymentRecord {
+  id              String        @id @default(cuid())
+  invoiceId       String
+  invoice         Invoice       @relation(fields: [invoiceId], references: [id])
+  amount          Int
+  status          PaymentStatus @default(PENDING)
+  squarePaymentId String?
+  squareOrderId   String?
+  paymentMethod   String?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Retainer {
+  id                 String        @id @default(cuid())
+  clientId           String
+  client             Client        @relation(fields: [clientId], references: [id])
+  projectId          String?
+  project            Project?      @relation(fields: [projectId], references: [id])
+  tier               String
+  monthlyAmount      Int
+  includedServices   String[]
+  billingCycle       String        @default("monthly")
+  paymentStatus      PaymentStatus @default(PENDING)
+  hostingStatus      String?
+  managedDomains     String[]
+  maintenanceNotes   String?
+  renewalDate        DateTime?
+  squareSubscriptionId String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model Project {
+  id          String       @id @default(cuid())
+  clientId    String?
+  client      Client?      @relation(fields: [clientId], references: [id])
+  name        String
+  stage       ProjectStage @default(LEAD)
+  description String?
+  demoInterest String?
+  invoices    Invoice[]
+  retainers   Retainer[]
+  tasks       Task[]
+  mediaAssets MediaAsset[]
+  caseStudy   CaseStudy?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  priority    String   @default("Normal")
+  dueDate     DateTime?
+  completed   Boolean  @default(false)
+  assigneeId  String?
+  assignee    User?    @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  clientId    String?
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id])
+  requestId   String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DemoTemplate {
+  id                 String          @id @default(cuid())
+  slug               String          @unique
+  name               String
+  category           String
+  description        String
+  palette            Json
+  features           String[]
+  screenshotUrl      String?
+  visible            Boolean         @default(true)
+  ctaLabel           String          @default("Request This Demo Style")
+  recommendedPackage String
+  estimatedComplexity ComplexityLevel @default(MODERATE)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  audience  String   @default("public")
+  visible   Boolean  @default(true)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  eventType   String
+  location    String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MediaAsset {
+  id          String   @id @default(cuid())
+  clientId    String?
+  client      Client?  @relation(fields: [clientId], references: [id])
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id])
+  fileName    String
+  url         String
+  assetType   String
+  altText     String?
+  tags        String[]
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  entityType  String
+  entityId    String?
+  metadata    Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+}
+
+model SiteLog {
+  id        String      @id @default(cuid())
+  severity  LogSeverity @default(INFO)
+  source    String
+  message   String
+  userId    String?
+  user      User?       @relation("UserSiteLogs", fields: [userId], references: [id])
+  metadata  Json?
+  createdAt DateTime    @default(now())
+}
+
+model AnalyticsEvent {
+  id         String          @id @default(cuid())
+  eventName  String
+  sourcePage String?
+  demoSlug   String?
+  requestId  String?
+  request    ProjectRequest? @relation(fields: [requestId], references: [id])
+  visitorId  String?
+  metadata   Json?
+  createdAt  DateTime        @default(now())
+
+  @@index([eventName])
+  @@index([demoSlug])
+}
+
+model IntegrationSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String?
+  secret    Boolean  @default(false)
+  enabled   Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CaseStudy {
+  id               String   @id @default(cuid())
+  projectId         String   @unique
+  project           Project  @relation(fields: [projectId], references: [id])
+  title             String
+  summary           String
+  beforeDescription String?
+  afterDescription  String?
+  technologies      String[]
+  timeline          String?
+  results           String[]
+  testimonial       String?
+  screenshots       String[]
+  published         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model DeploymentProfile {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  modules   Json
+  active    Boolean  @default(false)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
