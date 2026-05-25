@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
 import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Obsidian Systems Showcase Platform",
-  description: "Interactive demo showcase, AI quote funnel, invoice workflow, CRM, and admin operations platform for Obsidian Systems LLC."
+  description:
+    "Interactive demo showcase, AI quote funnel, invoice workflow, CRM, and admin operations platform for Obsidian Systems LLC.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const gaId = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID;
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
   const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
@@ -26,7 +30,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         ) : null}
         {gaId ? (
           <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
             <Script id="ga4" strategy="afterInteractive">
               {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
 gtag('js',new Date());gtag('config','${gaId}');`}
@@ -44,6 +51,7 @@ fbq('init','${metaPixelId}');fbq('track','PageView');`}
           </Script>
         ) : null}
         {children}
+        <Analytics />
       </body>
     </html>
   );
