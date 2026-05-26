@@ -6,6 +6,7 @@ import { ArrowRight, Bot, CreditCard, DatabaseZap, LockKeyhole, Menu, Sparkles, 
 import { Badge, Button, Section, StatCard } from "@/components/ui";
 import { RequestQuoteModal, type RequestMetadata } from "@/components/RequestQuoteModal";
 import { demoTemplates, featuredProjects, retainerTiers } from "@/lib/data";
+import { demoMiniSites } from "@/lib/demo-mini-sites";
 
 export function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -29,7 +30,6 @@ export function LandingPage() {
             <a href="#projects" className="hover:text-white">Projects</a>
             <Link href="/demos" className="hover:text-white">Demos</Link>
             <a href="#retainers" className="hover:text-white">Retainers</a>
-            <Link href="/admin" className="hover:text-white">Admin</Link>
           </nav>
           <div className="hidden lg:block">
             <Button onClick={() => setRequest({ sourcePage: "landing-hero", recommendedPackage: "Custom Platform Build", estimatedComplexity: "MODERATE" })}>
@@ -59,8 +59,7 @@ export function LandingPage() {
               {[
                 ["Projects", "#projects"],
                 ["Demos", "/demos"],
-                ["Retainers", "#retainers"],
-                ["Admin", "/admin"]
+                ["Retainers", "#retainers"]
               ].map(([label, href]) => (
                 <Link key={label} href={href} onClick={() => setMobileOpen(false)} className="rounded-lg border border-white/10 bg-white/7 px-4 py-3">
                   {label}
@@ -78,7 +77,7 @@ export function LandingPage() {
             Obsidian Systems Showcase Platform
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-            A premium client-facing demo gallery, AI quote funnel, custom invoice workflow, CRM, analytics hub, and internal admin operating system built for real business development.
+            A premium client-facing demo gallery, AI quote funnel, custom invoice workflow, CRM, analytics hub, and internal operating system built for real business development.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/demos">
@@ -92,7 +91,7 @@ export function LandingPage() {
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-3">
             <StatCard label="Demo verticals" value="10" detail="Commerce, healthcare, repair, legal, realty, restaurant, and services." />
-            <StatCard label="Admin modules" value="22" detail="CRM, invoices, retainers, AI control, logs, users, tasks, toggles." />
+            <StatCard label="Ops modules" value="22" detail="CRM, invoices, retainers, AI control, logs, users, tasks, toggles." />
             <StatCard label="Retainers" value="$200+" detail="Managed platform retainers framed around operational care." />
           </div>
         </div>
@@ -157,7 +156,7 @@ export function LandingPage() {
               href={project.link}
               className="glass group flex min-h-[260px] flex-col rounded-lg p-5 transition duration-300 hover:-translate-y-1 hover:border-obsidian-green/35"
             >
-              <div className="h-28 rounded-lg border border-white/10 bg-[linear-gradient(135deg,rgba(139,92,246,0.32),rgba(34,197,94,0.12),rgba(255,255,255,0.06))]" />
+              <ProjectPreview name={project.name} />
               <Badge className="mt-4 w-fit">{project.status}</Badge>
               <h3 className="mt-4 text-lg font-semibold text-white">{project.name}</h3>
               <p className="mt-2 flex-1 text-sm leading-6 text-slate-300">{project.description}</p>
@@ -185,9 +184,12 @@ export function LandingPage() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {demoTemplates.slice(0, 6).map((demo) => (
-                <Link key={demo.slug} href={`/demos?demo=${demo.slug}`} className="rounded-lg border border-white/10 bg-white/6 p-4 transition hover:border-obsidian-green/35 hover:bg-white/10">
-                  <p className="text-sm font-semibold text-white">{demo.name}</p>
-                  <p className="mt-1 text-xs text-slate-400">{demo.type}</p>
+                <Link key={demo.slug} href={`/demos?demo=${demo.slug}`} className="group overflow-hidden rounded-lg border border-white/10 bg-white/6 transition duration-300 hover:-translate-y-1 hover:border-obsidian-green/35 hover:bg-white/10 hover:shadow-glow">
+                  <DemoPreview demoSlug={demo.slug} />
+                  <div className="p-4">
+                    <p className="text-sm font-semibold text-white">{demo.name}</p>
+                    <p className="mt-1 text-xs text-slate-400">{demo.type}</p>
+                  </div>
                 </Link>
               ))}
             </div>
@@ -200,7 +202,7 @@ export function LandingPage() {
           {[
             { icon: Bot, title: "AI quote funnel", text: "OpenAI-backed quote generation with build range, timeframe, scope, retainer, add-ons, and manual review notes." },
             { icon: CreditCard, title: "Custom invoice workflow", text: "Client-facing invoice pages stay branded while Square powers deposits and payment sync underneath." },
-            { icon: LockKeyhole, title: "RBAC admin operations", text: "Super Admin, Admin, and Site Overseer permissions align with approval complexity and sensitive settings." },
+            { icon: LockKeyhole, title: "RBAC operations console", text: "Owner, operator, and overseer permissions align with approval complexity and sensitive settings." },
             { icon: DatabaseZap, title: "Prisma data model", text: "PostgreSQL-ready relationships for clients, requests, quotes, invoices, retainers, analytics, logs, media, and tasks." }
           ].map((item) => (
             <div key={item.title} className="rounded-lg border border-white/10 bg-white/[0.055] p-5">
@@ -252,6 +254,70 @@ export function LandingPage() {
       </Section>
 
       <RequestQuoteModal open={Boolean(request)} onClose={() => setRequest(null)} metadata={request || {}} />
+      <Link
+        href="/admin/login"
+        aria-label="Staff access"
+        className="focus-ring fixed bottom-4 right-4 z-30 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-slate-950/75 text-slate-500 shadow-2xl backdrop-blur transition hover:border-obsidian-green/35 hover:text-obsidian-green"
+      >
+        <LockKeyhole className="h-4 w-4" />
+      </Link>
     </main>
+  );
+}
+
+function ProjectPreview({ name }: { name: string }) {
+  const palette = name.includes("K&K")
+    ? ["#F7F2EC", "#D9B8A1", "#8DAA91"]
+    : name.includes("Tech")
+      ? ["#0B0F14", "#7C3AED", "#22C55E"]
+      : name.includes("coffee")
+        ? ["#2E1B12", "#B9854D", "#F4E7D1"]
+        : name.includes("Harbor")
+          ? ["#0F172A", "#38BDF8", "#DFF6FF"]
+          : ["#0B0F14", "#7C3AED", "#22C55E"];
+
+  return (
+    <div className="relative h-28 overflow-hidden rounded-lg border border-white/10" style={{ background: `linear-gradient(135deg, ${palette[0]}, ${palette[1]})` }}>
+      <div className="absolute inset-3 rounded border border-white/20 bg-white/10 p-2">
+        <div className="h-3 w-20 rounded-full bg-white/40" />
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="h-14 rounded bg-white/20" style={{ boxShadow: `inset 0 -18px 0 ${palette[2]}` }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DemoPreview({ demoSlug }: { demoSlug: string }) {
+  const site = demoMiniSites[demoSlug];
+  const item = site?.items[0];
+  const dark = item?.imageTone || "#0B0F14";
+
+  return (
+    <div className="relative h-32 overflow-hidden border-b border-white/10 bg-slate-950">
+      <div className="absolute inset-0 opacity-80" style={{ background: `radial-gradient(circle at 22% 20%, ${item?.imageTone || "#7C3AED"}, transparent 28%), linear-gradient(135deg, ${dark}, #020617)` }} />
+      <div className="absolute inset-3 rounded-lg border border-white/20 bg-white/12 p-2 backdrop-blur-sm transition duration-300 group-hover:scale-[1.02]">
+        <div className="flex items-center justify-between">
+          <div className="h-2.5 w-20 rounded-full bg-white/60" />
+          <div className="h-5 w-5 rounded-full bg-obsidian-green/80" />
+        </div>
+        <div className="mt-3 grid grid-cols-[1fr_0.7fr] gap-2">
+          <div className="space-y-2">
+            <div className="h-4 rounded bg-white/45" />
+            <div className="h-3 w-4/5 rounded bg-white/25" />
+            <div className="h-8 rounded bg-white/20" />
+          </div>
+          <div className="grid gap-1.5">
+            {[0, 1, 2].map((card) => (
+              <div key={card} className="rounded border border-white/15 bg-white/20 px-2 py-1">
+                <div className="h-2 w-10 rounded bg-white/50" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

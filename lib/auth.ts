@@ -13,6 +13,7 @@ export type SessionUser = {
   name: string;
   role: RoleName;
   permissions: string[];
+  mustChangePassword: boolean;
 };
 
 export async function signIn(email: string, password: string) {
@@ -30,7 +31,8 @@ export async function signIn(email: string, password: string) {
     email: user.email,
     name: user.name,
     role: user.role.name,
-    permissions: user.role.permissions
+    permissions: user.role.permissions,
+    mustChangePassword: user.mustChangePassword
   };
 
   const token = await new SignJWT(sessionUser)
@@ -61,6 +63,53 @@ export async function signIn(email: string, password: string) {
 
 export function signOut() {
   cookies().delete(cookieName);
+}
+
+export async function updatePassword(userId: string, password: string) {
+  const passwordHash = await bcrypt.hash(password, 12);
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      passwordHash,
+      mustChangePassword: false,
+      lastPasswordChangeAt: new Date()
+    },
+    include: { role: true }
+  });
+
+  const sessionUser: SessionUser = {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role.name,
+    permissions: user.role.permissions,
+    mustChangePassword: false
+  };
+
+  const token = await new SignJWT(sessionUser)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("8h")
+    .sign(secret);
+
+  cookies().set(cookieName, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 8
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: user.id,
+      action: "password_changed",
+      entityType: "User",
+      entityId: user.id,
+      metadata: { forcedChangeCompleted: true },
+      ipAddress: headers().get("x-forwarded-for")
+    }
+  }).catch(() => undefined);
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {

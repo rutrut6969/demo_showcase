@@ -8,7 +8,12 @@ declare global {
 }
 
 const standardMetaEvents: Record<string, string> = {
+  ViewDemo: "ViewContent",
+  RequestStarted: "Lead",
   RequestSubmitted: "Lead",
+  AIQuoteGenerated: "Lead",
+  InvoiceViewed: "ViewContent",
+  InvoiceApproved: "Lead",
   ContactClicked: "Contact",
   DepositPaid: "Purchase"
 };

@@ -39,7 +39,7 @@ const featureOptions = [
   "CRM",
   "Client portal",
   "AI quote funnel",
-  "Admin dashboard",
+  "Operations dashboard",
   "Analytics",
   "Invoice workflow"
 ];

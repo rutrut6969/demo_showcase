@@ -5,11 +5,13 @@ import { Suspense } from "react";
 import { MetaPixelEvents } from "@/components/MetaPixelEvents";
 import "./globals.css";
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
   title: "Obsidian Systems Showcase Platform",
   description:
     "Explore interactive demo websites, AI-powered quote flows, and managed business platform systems built by Obsidian Systems LLC.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
+  metadataBase: siteUrl,
   openGraph: {
     title: "Obsidian Systems Showcase Platform",
     description:
@@ -37,6 +39,21 @@ export const metadata: Metadata = {
     icon: "/icon.svg"
   },
 };
+
+function getSiteUrl() {
+  const rawUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+    "http://localhost:3000";
+
+  const normalizedUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+
+  try {
+    return new URL(normalizedUrl);
+  } catch {
+    return new URL("http://localhost:3000");
+  }
+}
 
 export default function RootLayout({
   children,

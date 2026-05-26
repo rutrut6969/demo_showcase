@@ -108,10 +108,10 @@ function buildFallbackQuote(input: QuoteInput, complexity: ComplexityLevel): Gen
     suggestedAddOns: [
       "Analytics event mapping",
       "Branded proposal and invoice workflow",
-      "Admin dashboard training",
+      "Operations dashboard training",
       "Managed Platform Retainer onboarding"
     ],
-    scopeSummary: `A ${input.businessType || "business"} platform inspired by ${input.selectedDemo || "the selected demo"} with ${input.desiredFeatures.length ? input.desiredFeatures.join(", ") : "core lead capture, polished pages, and admin-ready workflows"}.`,
+    scopeSummary: `A ${input.businessType || "business"} platform inspired by ${input.selectedDemo || "the selected demo"} with ${input.desiredFeatures.length ? input.desiredFeatures.join(", ") : "core lead capture, polished pages, and operations-ready workflows"}.`,
     notesForManualReview:
       "Review integrations, content readiness, payment flow requirements, legal/healthcare compliance needs, timeline pressure, and any imported assets before final pricing."
   };

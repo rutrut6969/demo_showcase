@@ -83,6 +83,8 @@ model User {
   name           String
   email          String          @unique
   passwordHash   String
+  mustChangePassword Boolean     @default(false)
+  lastPasswordChangeAt DateTime?
   suspended      Boolean         @default(false)
   roleId         String
   role           Role            @relation(fields: [roleId], references: [id])

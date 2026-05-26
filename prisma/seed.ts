@@ -1,5 +1,6 @@
 import { PrismaClient, RoleName } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 import { demoTemplates, retainerTiers } from "../lib/data";
 
 const prisma = new PrismaClient();
@@ -47,18 +48,25 @@ async function main() {
   }
 
   const ownerRole = await prisma.role.findUniqueOrThrow({ where: { name: RoleName.SUPER_ADMIN } });
-  const passwordHash = await bcrypt.hash("ChangeMeNow!2026", 12);
+  const superAdminEmail = "isaac.rutledgev@obsidian-systems.tech";
+  const temporaryPassword = process.env.SEED_SUPER_ADMIN_TEMP_PASSWORD || randomBytes(18).toString("base64url");
+  const passwordHash = await bcrypt.hash(temporaryPassword, 12);
 
   await prisma.user.upsert({
-    where: { email: "owner@obsidiansystems.local" },
+    where: { email: superAdminEmail },
     update: { roleId: ownerRole.id },
     create: {
-      name: "Obsidian Owner",
-      email: "owner@obsidiansystems.local",
+      name: "Isaac Rutledge",
+      email: superAdminEmail,
       passwordHash,
-      roleId: ownerRole.id
+      roleId: ownerRole.id,
+      mustChangePassword: true
     }
   });
+
+  if (!process.env.SEED_SUPER_ADMIN_TEMP_PASSWORD) {
+    console.info(`Generated temporary Super Admin password for ${superAdminEmail}: ${temporaryPassword}`);
+  }
 
   for (const demo of demoTemplates) {
     await prisma.demoTemplate.upsert({

@@ -16,7 +16,7 @@ const sampleInvoice = {
   scopeBreakdown: [
     "Premium storefront with product catalog and featured collections",
     "Square checkout and deposit workflow integration placeholder",
-    "Admin dashboard for inventory, events, and lead management",
+    "Operations dashboard for inventory, events, and lead management",
     "AI-assisted product upload concept and analytics event mapping"
   ],
   lineItems: [

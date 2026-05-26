@@ -60,9 +60,9 @@ export const featuredProjects = [
   {
     name: "Obsidian Systems Showcase Platform",
     status: "This Build",
-    description: "Full-stack lead generation, demo showcase, AI quote, invoice, CRM, and admin operations platform.",
+    description: "Full-stack lead generation, demo showcase, AI quote, invoice, CRM, and internal operations platform.",
     tags: ["Next.js", "Prisma", "AI Quotes"],
-    link: "/admin"
+    link: "/demos"
   }
 ];
 
@@ -104,9 +104,9 @@ export const demoTemplates: DemoTemplateData[] = [
       "Inventory sync concept",
       "Events section",
       "AI-assisted product upload concept",
-      "Admin dashboard preview"
+      "Creator dashboard preview"
     ],
-    pages: ["Shop", "Events", "Maker Story", "Cart", "Admin Preview"],
+    pages: ["Shop", "Events", "Maker Story", "Cart", "Studio Preview"],
     recommendedPackage: "Commerce Launch",
     complexity: "MODERATE",
     accentClass: "from-[#D9B8A1] via-[#8DAA91] to-[#6B4F43]"
