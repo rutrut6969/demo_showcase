@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, X } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
 import { quoteDisclaimer } from "@/lib/data";
+import { trackPlatformEvent } from "@/lib/tracking";
 import { formatCurrency } from "@/lib/utils";
 
 export type RequestMetadata = {
@@ -59,6 +60,18 @@ export function RequestQuoteModal({
 
   const featureSummary = useMemo(() => features.join(", "), [features]);
 
+  useEffect(() => {
+    if (open) {
+      trackPlatformEvent("RequestStarted", {
+        selectedDemo: metadata.selectedDemo,
+        demoCategory: metadata.demoCategory,
+        recommendedPackage: metadata.recommendedPackage,
+        sourcePage: metadata.sourcePage,
+        estimatedComplexity: metadata.estimatedComplexity
+      });
+    }
+  }, [open, metadata.demoCategory, metadata.estimatedComplexity, metadata.recommendedPackage, metadata.selectedDemo, metadata.sourcePage]);
+
   if (!open) return null;
 
   async function submit(formData: FormData) {
@@ -91,6 +104,20 @@ export function RequestQuoteModal({
       });
       const data = (await response.json()) as QuoteResult;
       setResult(data);
+      trackPlatformEvent("RequestSubmitted", {
+        requestId: data.requestId,
+        selectedDemo: metadata.selectedDemo,
+        demoCategory: metadata.demoCategory,
+        persisted: data.persisted
+      });
+      if (data.quote) {
+        trackPlatformEvent("AIQuoteGenerated", {
+          requestId: data.requestId,
+          selectedDemo: metadata.selectedDemo,
+          complexityLevel: data.quote.complexityLevel,
+          recommendedPackage: data.quote.recommendedPackage
+        });
+      }
     } catch {
       setResult({
         quote: {
@@ -105,18 +132,22 @@ export function RequestQuoteModal({
           notesForManualReview: "The local request API was unavailable, so this temporary estimate was generated in the browser."
         }
       });
+      trackPlatformEvent("AIQuoteGenerated", {
+        selectedDemo: metadata.selectedDemo,
+        generatedBy: "browser-fallback"
+      });
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/72 px-4 py-6 backdrop-blur">
-      <div className="glass relative w-full max-w-4xl rounded-lg">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/72 px-4 py-4 backdrop-blur sm:py-6">
+      <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-4xl overflow-y-auto rounded-lg border border-white/15 bg-slate-950/95 shadow-2xl">
         <button
           aria-label="Close request form"
           onClick={onClose}
-          className="focus-ring absolute right-4 top-4 rounded-full border border-white/12 bg-white/8 p-2 text-slate-200 hover:bg-white/14"
+          className="focus-ring sticky left-full top-4 z-10 mr-4 rounded-full border border-white/15 bg-slate-900 p-2 text-slate-100 shadow-lg hover:bg-slate-800"
         >
           <X className="h-5 w-5" />
         </button>
@@ -137,16 +168,16 @@ export function RequestQuoteModal({
               <Select name="budgetRange" label="Budget range" options={["Under $2,500", "$2,500-$5,000", "$5,000-$10,000", "$10,000-$25,000", "$25,000+"]} />
               <Select name="timeline" label="Timeline" options={["ASAP", "2-4 weeks", "1-2 months", "3+ months", "Planning phase"]} />
               <div>
-                <label className="text-sm font-medium text-slate-200">Selected demo style</label>
-                <input readOnly value={selectedDemo} className="mt-2 w-full rounded-lg border border-white/12 bg-white/8 px-3 py-3 text-sm text-slate-200" />
+                <label className="text-sm font-medium text-slate-100">Selected demo style</label>
+                <input readOnly value={selectedDemo} className="mt-2 w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-3 text-sm text-slate-100" />
               </div>
             </div>
 
             <div className="mt-5">
-              <p className="text-sm font-medium text-slate-200">Desired features</p>
+              <p className="text-sm font-medium text-slate-100">Desired features</p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {featureOptions.map((feature) => (
-                  <label key={feature} className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/6 px-3 py-2 text-sm text-slate-200">
+                  <label key={feature} className="flex items-center gap-3 rounded-lg border border-white/15 bg-slate-900 px-3 py-2 text-sm text-slate-100">
                     <input
                       type="checkbox"
                       checked={features.includes(feature)}
@@ -155,7 +186,7 @@ export function RequestQuoteModal({
                           current.includes(feature) ? current.filter((item) => item !== feature) : [...current, feature]
                         )
                       }
-                      className="h-4 w-4 rounded border-white/20 bg-black accent-obsidian-green"
+                      className="h-4 w-4 rounded border-white/25 bg-slate-950 accent-obsidian-green"
                     />
                     {feature}
                   </label>
@@ -164,24 +195,24 @@ export function RequestQuoteModal({
             </div>
 
             <div className="mt-5">
-              <label className="text-sm font-medium text-slate-200" htmlFor="notes">
+              <label className="text-sm font-medium text-slate-100" htmlFor="notes">
                 Notes/project prompt
               </label>
               <textarea
                 id="notes"
                 name="notes"
                 rows={4}
-                className="mt-2 w-full rounded-lg border border-white/12 bg-white/8 px-3 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-obsidian-green/70"
+                className="mt-2 w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-obsidian-green/70"
                 placeholder="Describe the business, workflows, integrations, and launch goals."
               />
             </div>
 
             <label className="mt-5 flex items-start gap-3 text-sm text-slate-300">
-              <input name="marketingConsent" type="checkbox" className="mt-1 h-4 w-4 rounded accent-obsidian-green" />
+              <input name="marketingConsent" type="checkbox" className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-900 accent-obsidian-green" />
               I agree to receive follow-up communication from Obsidian Systems LLC.
             </label>
             <label className="mt-3 flex items-start gap-3 text-sm text-slate-300">
-              <input name="termsAcknowledged" required type="checkbox" className="mt-1 h-4 w-4 rounded accent-obsidian-green" />
+              <input name="termsAcknowledged" required type="checkbox" className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-900 accent-obsidian-green" />
               I acknowledge the privacy/terms notice and understand this is a preliminary estimate.
             </label>
 
@@ -190,12 +221,12 @@ export function RequestQuoteModal({
             </Button>
           </form>
 
-          <aside className="border-t border-white/10 bg-black/24 p-5 sm:p-7 lg:border-l lg:border-t-0">
+          <aside className="border-t border-white/15 bg-black/50 p-5 sm:p-7 lg:border-l lg:border-t-0">
             <h3 className="text-lg font-semibold text-white">Quote preview</h3>
             <p className="mt-2 text-sm text-slate-300">{quoteDisclaimer}</p>
             {result?.quote ? (
               <div className="mt-6 space-y-4">
-                <div className="rounded-lg border border-obsidian-green/25 bg-obsidian-green/10 p-4">
+                <div className="rounded-lg border border-obsidian-green/30 bg-slate-900/90 p-4">
                   <div className="flex items-center gap-2 text-obsidian-green">
                     <CheckCircle2 className="h-5 w-5" />
                     <p className="font-semibold">Preliminary estimate ready</p>
@@ -216,13 +247,13 @@ export function RequestQuoteModal({
                     ))}
                   </div>
                 </div>
-                <p className="rounded-lg border border-white/10 bg-white/6 p-4 text-sm text-slate-300">{result.quote.scopeSummary}</p>
+                <p className="rounded-lg border border-white/15 bg-black/50 p-4 text-sm text-slate-300">{result.quote.scopeSummary}</p>
               </div>
             ) : (
               <div className="mt-6 space-y-3">
-                <div className="h-24 animate-pulse rounded-lg bg-white/10" />
-                <div className="h-16 animate-pulse rounded-lg bg-white/8" />
-                <div className="h-16 animate-pulse rounded-lg bg-white/8" />
+                <div className="h-24 animate-pulse rounded-lg bg-slate-900/90" />
+                <div className="h-16 animate-pulse rounded-lg bg-slate-900/80" />
+                <div className="h-16 animate-pulse rounded-lg bg-slate-900/80" />
               </div>
             )}
           </aside>
@@ -235,7 +266,7 @@ export function RequestQuoteModal({
 function Field({ label, name, type = "text", required }: { label: string; name: string; type?: string; required?: boolean }) {
   return (
     <div>
-      <label className="text-sm font-medium text-slate-200" htmlFor={name}>
+      <label className="text-sm font-medium text-slate-100" htmlFor={name}>
         {label}
       </label>
       <input
@@ -243,7 +274,7 @@ function Field({ label, name, type = "text", required }: { label: string; name: 
         name={name}
         type={type}
         required={required}
-        className="mt-2 w-full rounded-lg border border-white/12 bg-white/8 px-3 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-obsidian-green/70"
+        className="mt-2 w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-obsidian-green/70"
       />
     </div>
   );
@@ -252,13 +283,13 @@ function Field({ label, name, type = "text", required }: { label: string; name: 
 function Select({ label, name, options }: { label: string; name: string; options: string[] }) {
   return (
     <div>
-      <label className="text-sm font-medium text-slate-200" htmlFor={name}>
+      <label className="text-sm font-medium text-slate-100" htmlFor={name}>
         {label}
       </label>
       <select
         id={name}
         name={name}
-        className="mt-2 w-full rounded-lg border border-white/12 bg-white/8 px-3 py-3 text-sm text-white outline-none transition focus:border-obsidian-green/70"
+        className="mt-2 w-full rounded-lg border border-white/15 bg-slate-900 px-3 py-3 text-sm text-white outline-none transition focus:border-obsidian-green/70"
       >
         {options.map((option) => (
           <option key={option} value={option} className="bg-obsidian-900">

@@ -6,25 +6,27 @@ type SquarePaymentInput = {
 };
 
 export async function createSquareDepositPayment(input: SquarePaymentInput) {
-  const configured = Boolean(process.env.SQUARE_ACCESS_TOKEN && process.env.SQUARE_LOCATION_ID);
+  const squareConfig = getSquareConfig();
+  const configured = Boolean(squareConfig.accessToken && squareConfig.locationId);
   if (!configured) {
     return {
       ok: true,
       mode: "placeholder",
       squarePaymentId: `sq-placeholder-${input.invoiceId}`,
-      message: "Square sandbox credentials are not configured. Payment was logged as a placeholder."
+      message: "Square credentials are not configured. Payment was logged as a placeholder.",
+      environment: squareConfig.environment
     };
   }
 
   const endpoint =
-    process.env.SQUARE_ENVIRONMENT === "production"
+    squareConfig.environment === "production"
       ? "https://connect.squareup.com/v2/payments"
       : "https://connect.squareupsandbox.com/v2/payments";
 
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${squareConfig.accessToken}`,
       "Content-Type": "application/json",
       "Square-Version": "2025-04-16"
     },
@@ -35,7 +37,7 @@ export async function createSquareDepositPayment(input: SquarePaymentInput) {
         amount: input.amount,
         currency: input.currency || "USD"
       },
-      location_id: process.env.SQUARE_LOCATION_ID,
+      location_id: squareConfig.locationId,
       note: `Obsidian Systems invoice ${input.invoiceId} deposit`
     })
   });
@@ -46,5 +48,27 @@ export async function createSquareDepositPayment(input: SquarePaymentInput) {
     mode: "square",
     squarePaymentId: data.payment?.id,
     data
+  };
+}
+
+export function getSquareConfig() {
+  const environment = process.env.SQUARE_ENVIRONMENT === "production" ? "production" : "sandbox";
+
+  // TODO: When the Square Web Payments SDK form is added, expose only applicationId
+  // and locationId to the frontend. Keep accessToken server-side only.
+  if (environment === "production") {
+    return {
+      environment,
+      accessToken: process.env.SQUARE_PRODUCTION_ACCESS_TOKEN || process.env.SQUARE_ACCESS_TOKEN,
+      locationId: process.env.SQUARE_PRODUCTION_LOCATION_ID || process.env.SQUARE_LOCATION_ID,
+      applicationId: process.env.SQUARE_PRODUCTION_APPLICATION_ID || process.env.SQUARE_APPLICATION_ID
+    };
+  }
+
+  return {
+    environment,
+    accessToken: process.env.SQUARE_SANDBOX_ACCESS_TOKEN || process.env.SQUARE_ACCESS_TOKEN,
+    locationId: process.env.SQUARE_SANDBOX_LOCATION_ID || process.env.SQUARE_LOCATION_ID,
+    applicationId: process.env.SQUARE_SANDBOX_APPLICATION_ID || process.env.SQUARE_APPLICATION_ID
   };
 }
