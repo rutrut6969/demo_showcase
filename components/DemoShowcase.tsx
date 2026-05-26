@@ -143,13 +143,6 @@ export function DemoShowcase() {
         </div>
       ) : null}
 
-      <div className="fixed inset-x-4 bottom-4 z-30 grid gap-2 sm:hidden">
-        <Button onClick={() => openRequest(metadata, "Mobile Get AI Estimate")}>Get AI Estimate</Button>
-        <Button variant="secondary" onClick={() => openRequest({ ...metadata, recommendedPackage: "Style Customization" }, "Mobile Customize This Platform")}>
-          Customize This Platform
-        </Button>
-      </div>
-
       <RequestQuoteModal open={Boolean(request)} onClose={() => setRequest(null)} metadata={request || {}} />
     </main>
   );
@@ -270,6 +263,7 @@ function MiniWebsiteDemo({
   const accent = getAccentSwatch(paletteValues, dark) || "#22C55E";
   const light = getLightestSwatch(paletteValues) || "#FFFFFF";
   const pageContent = getDemoPageContent(site, activePage);
+  const profile = getDemoDesignProfile(site.slug);
 
   const showDemoToast = (message: string) => {
     setToast(message);
@@ -277,114 +271,44 @@ function MiniWebsiteDemo({
   };
 
   return (
-    <div className="relative bg-black/28 p-3 sm:p-5">
-      <div className="overflow-hidden rounded-lg bg-white text-slate-950 shadow-2xl">
+    <div className={`relative p-3 sm:p-5 ${profile.shellClass}`}>
+      <div className={`overflow-hidden text-slate-950 shadow-2xl ${profile.frameClass}`}>
         <DemoNavbar
           site={site}
           activePage={activePage}
           onPageChange={onPageChange}
           onCart={() => setCartOpen(true)}
           dark={dark}
+          profile={profile}
         />
 
-        <section className="relative overflow-hidden border-b border-slate-200" style={{ backgroundColor: light }}>
-          <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="relative z-10">
-              <div className="inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-white" style={{ backgroundColor: dark }}>
-                {site.brandLine}
-              </div>
-              <h2 className="mt-5 max-w-3xl text-3xl font-semibold leading-tight text-slate-950 sm:text-5xl">{pageContent.heroTitle}</h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-700">{pageContent.heroText}</p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <button
-                  onClick={() => showDemoToast(`${site.primaryAction} is simulated in this demo.`)}
-                  className="rounded-lg px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
-                  style={{ backgroundColor: dark }}
-                >
-                  {site.primaryAction}
-                </button>
-                <button
-                  onClick={() => onRequest(demo.recommendedPackage)}
-                  className="rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
-                >
-                  Request this style
-                </button>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <DemoScene site={site} activePage={activePage} variant="hero" dark={dark} accent={accent} />
-              <div className="rounded-lg p-4 text-white" style={{ backgroundColor: dark }}>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-70">Today</p>
-                <p className="mt-3 text-2xl font-semibold">{site.promo}</p>
-                <div className="mt-8 grid gap-2 text-sm">
-                  {site.flowSummary.slice(0, 3).map((summary) => (
-                    <div key={summary} className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2">
-                      <CheckCircle2 className="h-4 w-4" style={{ color: accent }} />
-                      {summary}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <main className="space-y-0">
-          <DemoPagePanel pageContent={pageContent} site={site} dark={dark} accent={accent} onDemoOnly={showDemoToast} />
-
-          <section className="border-b border-slate-200 p-5 sm:p-8">
-            <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.16em]" style={{ color: dark }}>{activePage}</p>
-                <h3 className="mt-2 text-2xl font-semibold text-slate-950">{site.itemsTitle}</h3>
-              </div>
-              <DemoSearchFilter categories={site.categories} dark={dark} onFilter={(category) => showDemoToast(`${category} filter applied for demo only.`)} />
-            </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {site.items.map((item) => (
-                <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={() => setCartOpen(true)} />
-              ))}
-            </div>
-          </section>
-
-          <section className="grid gap-0 border-b border-slate-200 lg:grid-cols-[1fr_0.8fr]">
-            <div className="p-5 sm:p-8">
-              <h3 className="text-2xl font-semibold text-slate-950">{site.servicesTitle}</h3>
-              <div className="mt-5 grid gap-4 md:grid-cols-3">
-                {site.services.map((service) => (
-                  <DemoServiceCard key={service.name} service={service} dark={dark} accent={accent} />
-                ))}
-              </div>
-            </div>
-            <div className="border-t border-slate-200 bg-slate-50 p-5 sm:p-8 lg:border-l lg:border-t-0">
-              <DemoBookingForm site={site} dark={dark} accent={accent} onDemoOnly={showDemoToast} onRequest={() => onRequest("Production Workflow Build")} />
-            </div>
-          </section>
-
-          <section className="grid gap-0 border-b border-slate-200 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="p-5 sm:p-8">
-              <DemoGallery title={site.galleryTitle} items={site.gallery} dark={dark} accent={accent} />
-            </div>
-            <div className="border-t border-slate-200 p-5 sm:p-8 lg:border-l lg:border-t-0">
-              <h3 className="text-2xl font-semibold text-slate-950">Client proof</h3>
-              <div className="mt-5 grid gap-4">
-                {site.reviews.map((review) => (
-                  <DemoTestimonial key={review.name} review={review} accent={accent} />
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <DemoCTASection
-            title={`Build a production ${demo.name} style platform.`}
-            text="Connect the visible demo experience to real backend systems, payments, CRM records, analytics, and internal workflows."
+        <main className={profile.bodyClass} style={{ backgroundColor: profile.usePaletteBackground ? light : undefined }}>
+          <DemoIdentityHero
+            demo={demo}
+            site={site}
+            activePage={activePage}
+            pageContent={pageContent}
+            profile={profile}
             dark={dark}
+            accent={accent}
+            onDemoOnly={showDemoToast}
             onRequest={() => onRequest(demo.recommendedPackage)}
-            onDemoOnly={() => showDemoToast("Contact flow previewed. Use Request this style to open the real quote form.")}
           />
 
-          <DemoFooter site={site} dark={dark} onNavigate={onPageChange} />
+          <DemoIdentitySections
+            demo={demo}
+            site={site}
+            activePage={activePage}
+            pageContent={pageContent}
+            profile={profile}
+            dark={dark}
+            accent={accent}
+            onCart={() => setCartOpen(true)}
+            onRequest={onRequest}
+            onDemoOnly={showDemoToast}
+          />
+
+          <DemoFooter site={site} dark={dark} onNavigate={onPageChange} profile={profile} />
         </main>
       </div>
 
@@ -394,52 +318,690 @@ function MiniWebsiteDemo({
   );
 }
 
+type DemoMood =
+  | "artisan"
+  | "editorial"
+  | "velocity"
+  | "restaurant"
+  | "wellness"
+  | "medical"
+  | "cyber"
+  | "legal"
+  | "realty"
+  | "outdoor";
+
+type DemoDesignProfile = {
+  mood: DemoMood;
+  label: string;
+  shellClass: string;
+  frameClass: string;
+  bodyClass: string;
+  navClass: string;
+  navButtonClass: string;
+  activeNavClass: string;
+  cartButtonClass: string;
+  heroClass: string;
+  titleClass: string;
+  cardClass: string;
+  ctaClass: string;
+  footerClass: string;
+  sectionTitle: string;
+  interaction: string;
+  usePaletteBackground?: boolean;
+};
+
+const demoDesignProfiles: Record<string, DemoDesignProfile> = {
+  "crafted-commerce": {
+    mood: "artisan",
+    label: "maker board",
+    shellClass: "bg-[#F7F2EC] bg-[radial-gradient(circle_at_12%_18%,rgba(217,184,161,.45),transparent_18rem),linear-gradient(135deg,#F7F2EC,#EAD9CA)]",
+    frameClass: "rounded-[28px] border-[6px] border-[#F7F2EC] bg-[#F7F2EC] shadow-[0_28px_80px_rgba(80,55,43,.32)]",
+    bodyClass: "bg-[#F7F2EC] text-[#2E2E2E]",
+    navClass: "border-b border-[#D9B8A1]/60 bg-[#F7F2EC]/95 px-5 py-4",
+    navButtonClass: "rounded-full border border-[#D9B8A1] bg-white/60 px-4 py-2 text-sm font-semibold text-[#6B4F43] shadow-sm hover:-rotate-1 hover:bg-white",
+    activeNavClass: "bg-[#6B4F43] text-[#F7F2EC] shadow-md",
+    cartButtonClass: "rounded-full border border-[#6B4F43]/20 bg-[#8DAA91] px-4 py-2 text-sm font-bold text-white shadow-sm",
+    heroClass: "border-b border-[#D9B8A1]/60 bg-[#F7F2EC]",
+    titleClass: "font-serif text-[#2E2E2E]",
+    cardClass: "rounded-[24px] border border-[#D9B8A1]/70 bg-white/78 shadow-[0_14px_36px_rgba(107,79,67,.16)]",
+    ctaClass: "rounded-full bg-[#6B4F43] px-5 py-3 text-sm font-bold text-[#F7F2EC] shadow-md hover:bg-[#5a4036]",
+    footerClass: "bg-[#6B4F43] text-[#F7F2EC]",
+    sectionTitle: "handmade studio notes",
+    interaction: "layered scrapbook hover",
+    usePaletteBackground: true
+  },
+  "ember-oak": {
+    mood: "editorial",
+    label: "editorial lookbook",
+    shellClass: "bg-[#F5F2ED] p-0",
+    frameClass: "rounded-none bg-[#F5F2ED] shadow-[0_32px_90px_rgba(0,0,0,.28)]",
+    bodyClass: "bg-[#F5F2ED] text-[#121212]",
+    navClass: "border-b border-[#121212]/10 bg-[#F5F2ED]/98 px-6 py-5",
+    navButtonClass: "border-b border-transparent px-1 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[#121212]/60 hover:text-[#121212]",
+    activeNavClass: "border-[#121212] text-[#121212]",
+    cartButtonClass: "border border-[#121212] bg-transparent px-5 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[#121212]",
+    heroClass: "border-b border-[#121212]/10 bg-[#F5F2ED]",
+    titleClass: "font-serif text-[#121212]",
+    cardClass: "border border-[#121212]/10 bg-[#F5F2ED] shadow-none",
+    ctaClass: "bg-[#121212] px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-[#F5F2ED] hover:bg-[#2b2b2b]",
+    footerClass: "bg-[#121212] text-[#F5F2ED]",
+    sectionTitle: "seasonal edit",
+    interaction: "slow editorial reveal"
+  },
+  "velocity-fulfillment": {
+    mood: "velocity",
+    label: "conversion engine",
+    shellClass: "bg-[#07111f] bg-[radial-gradient(circle_at_20%_10%,rgba(37,99,235,.55),transparent_22rem),radial-gradient(circle_at_80%_0%,rgba(34,197,94,.32),transparent_20rem)]",
+    frameClass: "rounded-xl border border-[#22C55E]/30 bg-[#111827] shadow-[0_0_80px_rgba(37,99,235,.24)]",
+    bodyClass: "bg-[#111827] text-white",
+    navClass: "border-b border-[#2563EB]/40 bg-[#0b1221]/95 px-4 py-3",
+    navButtonClass: "rounded bg-white/8 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-slate-200 hover:bg-[#2563EB]",
+    activeNavClass: "bg-[#22C55E] text-[#07111f]",
+    cartButtonClass: "rounded bg-[#22C55E] px-4 py-2 text-sm font-black uppercase text-[#07111f] shadow-[0_0_24px_rgba(34,197,94,.35)]",
+    heroClass: "border-b border-[#2563EB]/35 bg-[#111827]",
+    titleClass: "font-black uppercase tracking-normal text-white",
+    cardClass: "rounded-xl border border-[#2563EB]/35 bg-white/8 shadow-[0_0_32px_rgba(37,99,235,.18)] backdrop-blur",
+    ctaClass: "rounded bg-[#22C55E] px-5 py-3 text-sm font-black uppercase text-[#07111f] hover:scale-[1.02]",
+    footerClass: "bg-[#07111f] text-slate-200",
+    sectionTitle: "conversion stack",
+    interaction: "fast pulse and urgency"
+  },
+  "petes-kitchen": {
+    mood: "restaurant",
+    label: "local pizza counter",
+    shellClass: "bg-[#5C4033] bg-[linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(#6d4b3c,#3b281f)] bg-[length:28px_28px]",
+    frameClass: "rounded-[18px] border-[8px] border-[#3B261D] bg-[#F8F4EC] shadow-[0_30px_70px_rgba(57,32,20,.42)]",
+    bodyClass: "bg-[#F8F4EC] text-[#2f211a]",
+    navClass: "border-b-4 border-[#C0392B] bg-[#2b211b] px-5 py-4 text-[#F8F4EC]",
+    navButtonClass: "rounded-none border-b-2 border-transparent px-3 py-2 font-serif text-sm font-bold text-[#F8F4EC] hover:border-[#E0A106]",
+    activeNavClass: "border-[#E0A106] text-[#E0A106]",
+    cartButtonClass: "rounded bg-[#C0392B] px-4 py-2 text-sm font-black text-[#F8F4EC]",
+    heroClass: "border-b-4 border-[#5C4033] bg-[#F8F4EC]",
+    titleClass: "font-serif text-[#C0392B]",
+    cardClass: "rounded-md border-2 border-[#5C4033]/25 bg-white shadow-[8px_8px_0_rgba(92,64,51,.18)]",
+    ctaClass: "rounded-md bg-[#C0392B] px-5 py-3 font-black text-[#F8F4EC] shadow-[4px_4px_0_#E0A106]",
+    footerClass: "bg-[#2b211b] text-[#F8F4EC]",
+    sectionTitle: "kitchen board",
+    interaction: "chalkboard order energy"
+  },
+  "northwood-chiropractic": {
+    mood: "wellness",
+    label: "calm care journey",
+    shellClass: "bg-[#edf7f3] bg-[radial-gradient(circle_at_20%_20%,rgba(168,195,176,.55),transparent_24rem),radial-gradient(circle_at_82%_15%,rgba(125,168,190,.28),transparent_22rem)]",
+    frameClass: "rounded-[32px] border border-white/80 bg-white/85 shadow-[0_28px_80px_rgba(36,52,71,.18)]",
+    bodyClass: "bg-white text-[#243447]",
+    navClass: "border-b border-[#A8C3B0]/45 bg-white/90 px-5 py-4",
+    navButtonClass: "rounded-full px-4 py-2 text-sm font-semibold text-[#243447]/70 hover:bg-[#A8C3B0]/18",
+    activeNavClass: "bg-[#A8C3B0]/35 text-[#243447]",
+    cartButtonClass: "rounded-full bg-[#243447] px-4 py-2 text-sm font-semibold text-white",
+    heroClass: "border-b border-[#A8C3B0]/35 bg-[linear-gradient(135deg,#ffffff,#edf7f3)]",
+    titleClass: "font-serif text-[#243447]",
+    cardClass: "rounded-[28px] border border-[#A8C3B0]/45 bg-white shadow-[0_18px_44px_rgba(36,52,71,.1)]",
+    ctaClass: "rounded-full bg-[#243447] px-5 py-3 text-sm font-semibold text-white",
+    footerClass: "bg-[#243447] text-white",
+    sectionTitle: "wellness pathway",
+    interaction: "slow calm transitions"
+  },
+  "harbor-family-practice": {
+    mood: "medical",
+    label: "patient utility portal",
+    shellClass: "bg-[#DFF6FF]",
+    frameClass: "rounded-lg border border-[#CBD5E1] bg-white shadow-[0_20px_70px_rgba(15,23,42,.16)]",
+    bodyClass: "bg-white text-[#0F172A]",
+    navClass: "border-b border-[#CBD5E1] bg-white px-5 py-3",
+    navButtonClass: "rounded-md px-3 py-2 text-sm font-semibold text-[#64748B] hover:bg-[#DFF6FF]",
+    activeNavClass: "bg-[#2563EB] text-white",
+    cartButtonClass: "rounded-md bg-[#2563EB] px-4 py-2 text-sm font-semibold text-white",
+    heroClass: "border-b border-[#CBD5E1] bg-[#F8FBFF]",
+    titleClass: "font-semibold text-[#0F172A]",
+    cardClass: "rounded-lg border border-[#CBD5E1] bg-white shadow-sm",
+    ctaClass: "rounded-md bg-[#2563EB] px-5 py-3 text-sm font-semibold text-white",
+    footerClass: "bg-[#0F172A] text-white",
+    sectionTitle: "patient access center",
+    interaction: "clear structured utility"
+  },
+  "obsidian-tech-er": {
+    mood: "cyber",
+    label: "repair command center",
+    shellClass: "bg-[#05070b] bg-[linear-gradient(rgba(34,197,94,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(124,58,237,.1)_1px,transparent_1px)] bg-[length:34px_34px]",
+    frameClass: "rounded-xl border border-[#22C55E]/35 bg-[#0B0F14] shadow-[0_0_90px_rgba(124,58,237,.28)]",
+    bodyClass: "bg-[#0B0F14] text-[#F8FAFC]",
+    navClass: "border-b border-[#22C55E]/25 bg-[#080b10]/95 px-4 py-3",
+    navButtonClass: "rounded border border-[#22C55E]/20 bg-[#101722] px-3 py-2 font-mono text-xs uppercase text-[#A1A1AA] hover:border-[#22C55E] hover:text-[#22C55E]",
+    activeNavClass: "border-[#22C55E] bg-[#22C55E]/12 text-[#22C55E]",
+    cartButtonClass: "rounded border border-[#7C3AED] bg-[#7C3AED]/20 px-4 py-2 font-mono text-xs uppercase text-white shadow-[0_0_24px_rgba(124,58,237,.3)]",
+    heroClass: "border-b border-[#22C55E]/25 bg-[#0B0F14]",
+    titleClass: "font-mono uppercase text-[#F8FAFC]",
+    cardClass: "rounded border border-[#22C55E]/25 bg-[#101722]/90 shadow-[0_0_30px_rgba(34,197,94,.08)]",
+    ctaClass: "rounded border border-[#22C55E] bg-[#22C55E] px-5 py-3 font-mono text-xs font-bold uppercase text-[#0B0F14]",
+    footerClass: "bg-[#05070b] text-[#F8FAFC]",
+    sectionTitle: "diagnostic grid",
+    interaction: "terminal diagnostics"
+  },
+  "summit-legal-group": {
+    mood: "legal",
+    label: "legal authority",
+    shellClass: "bg-[#0F172A]",
+    frameClass: "rounded-none border border-[#C8A96B]/30 bg-[#0F172A] shadow-[0_30px_90px_rgba(0,0,0,.35)]",
+    bodyClass: "bg-[#0F172A] text-white",
+    navClass: "border-b border-[#C8A96B]/25 bg-[#0F172A] px-6 py-5",
+    navButtonClass: "px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#CBD5E1] hover:text-[#C8A96B]",
+    activeNavClass: "text-[#C8A96B]",
+    cartButtonClass: "border border-[#C8A96B] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#C8A96B]",
+    heroClass: "border-b border-[#C8A96B]/25 bg-[#0F172A]",
+    titleClass: "font-serif text-white",
+    cardClass: "border border-[#C8A96B]/25 bg-white/[0.04] shadow-none",
+    ctaClass: "bg-[#C8A96B] px-5 py-3 text-sm font-semibold text-[#0F172A]",
+    footerClass: "bg-[#080d18] text-[#CBD5E1]",
+    sectionTitle: "case strategy brief",
+    interaction: "restrained authority"
+  },
+  "bluepeak-realty": {
+    mood: "realty",
+    label: "property discovery",
+    shellClass: "bg-[#eff6ff]",
+    frameClass: "rounded-2xl border border-[#CBD5E1] bg-white shadow-[0_24px_70px_rgba(51,65,85,.18)]",
+    bodyClass: "bg-white text-[#334155]",
+    navClass: "border-b border-[#CBD5E1] bg-white px-5 py-4",
+    navButtonClass: "rounded-full px-4 py-2 text-sm font-semibold text-[#334155] hover:bg-[#E8DCCF]/50",
+    activeNavClass: "bg-[#3B82F6] text-white",
+    cartButtonClass: "rounded-full bg-[#334155] px-4 py-2 text-sm font-semibold text-white",
+    heroClass: "border-b border-[#CBD5E1] bg-[#eff6ff]",
+    titleClass: "font-semibold text-[#0F172A]",
+    cardClass: "rounded-xl border border-[#CBD5E1] bg-white shadow-[0_18px_45px_rgba(51,65,85,.12)]",
+    ctaClass: "rounded-full bg-[#3B82F6] px-5 py-3 text-sm font-semibold text-white",
+    footerClass: "bg-[#334155] text-white",
+    sectionTitle: "market discovery",
+    interaction: "map and listing browse"
+  },
+  "evergreen-outdoor-living": {
+    mood: "outdoor",
+    label: "outdoor transformation",
+    shellClass: "bg-[#203b34] bg-[radial-gradient(circle_at_12%_10%,rgba(234,88,12,.28),transparent_20rem),linear-gradient(135deg,#2F5D50,#1f332e)]",
+    frameClass: "rounded-[30px] border border-[#F7F4ED]/35 bg-[#F7F4ED] shadow-[0_30px_90px_rgba(15,36,30,.35)]",
+    bodyClass: "bg-[#F7F4ED] text-[#2F5D50]",
+    navClass: "border-b border-[#2F5D50]/20 bg-[#F7F4ED]/95 px-5 py-4",
+    navButtonClass: "rounded-full px-4 py-2 text-sm font-bold text-[#2F5D50] hover:bg-[#2F5D50]/10",
+    activeNavClass: "bg-[#2F5D50] text-[#F7F4ED]",
+    cartButtonClass: "rounded-full bg-[#EA580C] px-4 py-2 text-sm font-bold text-white",
+    heroClass: "border-b border-[#2F5D50]/20 bg-[#F7F4ED]",
+    titleClass: "font-serif text-[#2F5D50]",
+    cardClass: "rounded-[22px] border border-[#2F5D50]/18 bg-white/75 shadow-[0_16px_42px_rgba(47,93,80,.16)]",
+    ctaClass: "rounded-full bg-[#EA580C] px-5 py-3 text-sm font-bold text-white",
+    footerClass: "bg-[#2F5D50] text-[#F7F4ED]",
+    sectionTitle: "transformation plan",
+    interaction: "organic reveal"
+  }
+};
+
+function getDemoDesignProfile(slug: string) {
+  return demoDesignProfiles[slug] || demoDesignProfiles["crafted-commerce"];
+}
+
+function DemoIdentityHero({
+  demo,
+  site,
+  activePage,
+  pageContent,
+  profile,
+  dark,
+  accent,
+  onDemoOnly,
+  onRequest
+}: {
+  demo: DemoTemplateData;
+  site: DemoMiniSite;
+  activePage: string;
+  pageContent: ReturnType<typeof getDemoPageContent>;
+  profile: DemoDesignProfile;
+  dark: string;
+  accent: string;
+  onDemoOnly: (message: string) => void;
+  onRequest: () => void;
+}) {
+  const primary = (
+    <button onClick={() => onDemoOnly(`${site.primaryAction} is simulated in this demo.`)} className={profile.ctaClass}>
+      {site.primaryAction}
+    </button>
+  );
+  const secondary = (
+    <button onClick={onRequest} className={`px-5 py-3 text-sm font-semibold transition ${profile.mood === "editorial" || profile.mood === "legal" ? "border border-current bg-transparent" : "rounded-full border border-current/20 bg-white/70"}`}>
+      Request this style
+    </button>
+  );
+
+  if (profile.mood === "artisan") {
+    return (
+      <section className={`relative overflow-hidden p-5 sm:p-8 ${profile.heroClass}`}>
+        <div className="absolute inset-0 opacity-40" style={{ backgroundImage: "radial-gradient(#D9B8A1 1px, transparent 1px)", backgroundSize: "18px 18px" }} />
+        <div className="relative grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rotate-[-1deg] rounded-[32px] border border-[#D9B8A1] bg-white/75 p-6 shadow-[10px_14px_0_rgba(107,79,67,.12)]">
+            <span className="inline-block rounded-full bg-[#8DAA91] px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-white">{profile.label}</span>
+            <h2 className={`mt-5 text-4xl leading-tight sm:text-6xl ${profile.titleClass}`}>{pageContent.heroTitle}</h2>
+            <p className="mt-4 max-w-xl text-base leading-8 text-[#6B4F43]">{pageContent.heroText}</p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">{primary}{secondary}</div>
+          </div>
+          <div className="grid min-h-[430px] grid-cols-2 gap-4">
+            {[site.items[0], site.gallery[0], site.items[1], site.gallery[1]].filter(Boolean).map((item, index) => (
+              <article key={`${item.name}-${index}`} className={`relative overflow-hidden rounded-[26px] border-4 border-white bg-white shadow-xl ${index % 2 ? "translate-y-8 rotate-2" : "-rotate-2"}`}>
+                <div className="h-44"><DemoVisual siteSlug={site.slug} item={item} accent={accent} /></div>
+                <div className="p-4">
+                  <p className="font-serif text-lg text-[#6B4F43]">{item.name}</p>
+                  <p className="mt-1 text-xs text-[#6B4F43]/70">{item.meta || item.price || "Maker favorite"}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (profile.mood === "editorial") {
+    return (
+      <section className={`p-5 sm:p-10 ${profile.heroClass}`}>
+        <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[#8B8B8B]">{activePage} / {profile.label}</p>
+            <h2 className={`mt-8 max-w-xl text-5xl leading-[0.95] sm:text-7xl ${profile.titleClass}`}>{pageContent.heroTitle}</h2>
+            <p className="mt-6 max-w-md text-sm leading-7 text-[#121212]/65">{pageContent.heroText}</p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">{primary}{secondary}</div>
+          </div>
+          <div className="grid h-[520px] grid-cols-[0.8fr_1.2fr] gap-4">
+            <div className="self-end border border-[#121212]/10 bg-[#121212] p-3">
+              <div className="h-72"><DemoVisual siteSlug={site.slug} item={site.items[1] || site.items[0]} accent={accent} /></div>
+            </div>
+            <div className="border border-[#121212]/10 bg-white p-4">
+              <div className="h-full"><DemoVisual siteSlug={site.slug} item={site.items[0]} accent={accent} /></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (profile.mood === "velocity" || profile.mood === "cyber") {
+    return (
+      <section className={`relative overflow-hidden p-5 sm:p-8 ${profile.heroClass}`}>
+        <div className="absolute inset-0 opacity-35" style={{ backgroundImage: `linear-gradient(90deg, ${accent}22 1px, transparent 1px), linear-gradient(${accent}22 1px, transparent 1px)`, backgroundSize: profile.mood === "cyber" ? "32px 32px" : "18px 18px" }} />
+        <div className="relative grid gap-6 lg:grid-cols-[1fr_0.9fr] lg:items-center">
+          <div>
+            <div className="inline-flex border border-current/30 bg-white/8 px-3 py-1 font-mono text-xs uppercase tracking-[0.18em]" style={{ color: accent }}>{profile.label}</div>
+            <h2 className={`mt-5 max-w-4xl text-4xl leading-tight sm:text-6xl ${profile.titleClass}`}>{pageContent.heroTitle}</h2>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">{pageContent.heroText}</p>
+            <div className="mt-6 flex flex-wrap gap-3">{primary}{secondary}</div>
+            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+              {site.flowSummary.slice(0, 3).map((summary, index) => (
+                <div key={summary} className="border border-white/10 bg-white/8 p-4">
+                  <p className="text-2xl font-black" style={{ color: accent }}>{index === 0 ? "09:42" : index === 1 ? "24h" : "4.8"}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-400">{summary}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="relative">
+            <DemoScene site={site} activePage={activePage} variant="hero" dark={dark} accent={accent} />
+            <div className="absolute -right-3 -top-3 rounded bg-[#22C55E] px-4 py-2 text-xs font-black uppercase text-[#07111f] shadow-xl">Live demo</div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (profile.mood === "restaurant") {
+    return (
+      <section className={`grid gap-0 overflow-hidden lg:grid-cols-[0.9fr_1.1fr] ${profile.heroClass}`}>
+        <div className="bg-[#2b211b] p-5 text-[#F8F4EC] sm:p-8">
+          <p className="font-serif text-lg text-[#E0A106]">Tonight&apos;s board</p>
+          <h2 className={`mt-4 text-5xl leading-none sm:text-7xl ${profile.titleClass}`}>{pageContent.heroTitle}</h2>
+          <p className="mt-5 max-w-xl text-lg leading-8 text-[#F8F4EC]/82">{pageContent.heroText}</p>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">{primary}{secondary}</div>
+        </div>
+        <div className="relative min-h-[470px] bg-[#C0392B]">
+          <DemoVisual siteSlug={site.slug} item={site.items[0]} accent={accent} />
+          <div className="absolute bottom-5 left-5 right-5 rounded-md bg-[#F8F4EC] p-4 shadow-xl">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#C0392B]">{site.promo}</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {site.items.slice(0, 3).map((item) => <p key={item.name} className="font-serif text-sm text-[#5C4033]">{item.name}</p>)}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (profile.mood === "realty") {
+    return (
+      <section className={`p-5 sm:p-8 ${profile.heroClass}`}>
+        <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+          <div>
+            <div className="rounded-2xl bg-white p-3 shadow-lg">
+              <div className="grid gap-2 sm:grid-cols-4">
+                {["City", "Price", "Beds", "More"].map((filter) => <div key={filter} className="rounded-xl border border-[#CBD5E1] px-4 py-3 text-sm font-semibold text-[#64748B]">{filter}</div>)}
+              </div>
+            </div>
+            <h2 className={`mt-7 max-w-3xl text-4xl leading-tight sm:text-6xl ${profile.titleClass}`}>{pageContent.heroTitle}</h2>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-[#475569]">{pageContent.heroText}</p>
+            <div className="mt-6 flex flex-wrap gap-3">{primary}{secondary}</div>
+          </div>
+          <div className="grid gap-3">
+            <div className="h-72 overflow-hidden rounded-2xl"><DemoVisual siteSlug={site.slug} item={site.items[0]} accent={accent} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              {site.items.slice(1, 3).map((item) => <div key={item.name} className="h-36 overflow-hidden rounded-xl"><DemoVisual siteSlug={site.slug} item={item} accent={accent} compact /></div>)}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (profile.mood === "outdoor") {
+    return (
+      <section className={`relative overflow-hidden p-5 sm:p-8 ${profile.heroClass}`}>
+        <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-[#EA580C]">{profile.label}</p>
+            <h2 className={`mt-5 max-w-3xl text-4xl leading-tight sm:text-6xl ${profile.titleClass}`}>{pageContent.heroTitle}</h2>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-[#475569]">{pageContent.heroText}</p>
+            <div className="mt-6 flex flex-wrap gap-3">{primary}{secondary}</div>
+          </div>
+          <div className="grid min-h-[420px] grid-cols-2 overflow-hidden rounded-[30px] border-[10px] border-white shadow-2xl">
+            <div className="relative"><DemoVisual siteSlug={site.slug} item={site.gallery[0]} accent={accent} /><span className="absolute left-4 top-4 rounded-full bg-black/55 px-3 py-1 text-xs font-bold text-white">Before</span></div>
+            <div className="relative"><DemoVisual siteSlug={site.slug} item={site.gallery[2] || site.gallery[1]} accent={accent} /><span className="absolute right-4 top-4 rounded-full bg-[#EA580C] px-3 py-1 text-xs font-bold text-white">After</span></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className={`p-5 sm:p-8 ${profile.heroClass}`}>
+      <div className={`grid gap-8 ${profile.mood === "medical" ? "lg:grid-cols-[1.15fr_0.85fr]" : profile.mood === "legal" ? "lg:grid-cols-[0.75fr_1.25fr]" : "lg:grid-cols-[0.9fr_1.1fr]"} lg:items-center`}>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em]" style={{ color: profile.mood === "legal" ? "#C8A96B" : accent }}>{profile.label}</p>
+          <h2 className={`mt-5 max-w-3xl text-4xl leading-tight sm:text-6xl ${profile.titleClass}`}>{pageContent.heroTitle}</h2>
+          <p className={`${profile.mood === "legal" ? "text-[#CBD5E1]" : "text-slate-600"} mt-4 max-w-2xl text-base leading-7`}>{pageContent.heroText}</p>
+          <div className="mt-6 flex flex-wrap gap-3">{primary}{secondary}</div>
+        </div>
+        <div className={`grid gap-3 ${profile.mood === "medical" ? "rounded-lg border border-[#CBD5E1] bg-white p-4" : profile.mood === "legal" ? "border-l border-[#C8A96B]/30 pl-5" : ""}`}>
+          {site.services.slice(0, 3).map((service, index) => (
+            <div key={service.name} className={profile.cardClass + " p-5"}>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: accent }}>0{index + 1}</p>
+              <h3 className={`mt-2 text-lg font-semibold ${profile.mood === "legal" ? "text-white" : "text-slate-950"}`}>{service.name}</h3>
+              <p className={`mt-2 text-sm leading-6 ${profile.mood === "legal" ? "text-[#CBD5E1]" : "text-slate-600"}`}>{service.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DemoIdentitySections({
+  demo,
+  site,
+  activePage,
+  pageContent,
+  profile,
+  dark,
+  accent,
+  onCart,
+  onRequest,
+  onDemoOnly
+}: {
+  demo: DemoTemplateData;
+  site: DemoMiniSite;
+  activePage: string;
+  pageContent: ReturnType<typeof getDemoPageContent>;
+  profile: DemoDesignProfile;
+  dark: string;
+  accent: string;
+  onCart: () => void;
+  onRequest: (recommendedPackage: string) => void;
+  onDemoOnly: (message: string) => void;
+}) {
+  const textOnDark = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
+  const headingColor = textOnDark ? "text-white" : "text-slate-950";
+  const mutedColor = textOnDark ? "text-slate-300" : "text-slate-600";
+
+  if (profile.mood === "artisan") {
+    return (
+      <>
+        <section className="grid gap-6 border-b border-[#D9B8A1]/70 p-5 sm:p-8 lg:grid-cols-[1fr_0.75fr]">
+          <div>
+            <p className="font-serif text-2xl text-[#6B4F43]">Meet the maker</p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {site.items.map((item, index) => (
+                <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-5">
+            <DemoPagePanel pageContent={pageContent} site={site} dark={dark} accent={accent} onDemoOnly={onDemoOnly} profile={profile} />
+            <DemoGallery title="Customer creation gallery" items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
+          </div>
+        </section>
+        <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest("Maker Commerce Build")} />
+        <DemoCTASection title={`Turn ${demo.name} into a working maker marketplace.`} text="Products, custom orders, pickup windows, events, Square checkout, and customer galleries can all connect to production workflows." dark={dark} onRequest={() => onRequest(demo.recommendedPackage)} onDemoOnly={() => onDemoOnly("Maker contact board previewed.")} profile={profile} />
+      </>
+    );
+  }
+
+  if (profile.mood === "editorial") {
+    return (
+      <>
+        <section className="border-b border-[#121212]/10 p-5 sm:p-10">
+          <div className="flex items-end justify-between gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-[0.34em] text-[#8B8B8B]">{profile.sectionTitle}</p>
+              <h3 className="mt-3 font-serif text-4xl text-[#121212] sm:text-6xl">{site.itemsTitle}</h3>
+            </div>
+            <DemoSearchFilter categories={site.categories} dark={dark} onFilter={(category) => onDemoOnly(`${category} editorial filter applied.`)} profile={profile} />
+          </div>
+          <div className="mt-10 grid gap-8 md:grid-cols-[1.2fr_0.8fr_1fr]">
+            {site.items.slice(0, 3).map((item, index) => (
+              <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />
+            ))}
+          </div>
+        </section>
+        <section className="grid gap-0 border-b border-[#121212]/10 lg:grid-cols-[1fr_1fr]">
+          <DemoGallery title="Lookbook frames" items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
+          <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest("Premium Commerce Workflow")} />
+        </section>
+        <DemoCTASection title="Build a fashion storefront with editorial weight." text="Collections, product variants, drops, newsletter capture, cart previews, and lookbook merchandising can be connected into a production store." dark={dark} onRequest={() => onRequest(demo.recommendedPackage)} onDemoOnly={() => onDemoOnly("Editorial contact previewed.")} profile={profile} />
+      </>
+    );
+  }
+
+  if (profile.mood === "velocity" || profile.mood === "cyber") {
+    return (
+      <>
+        <section className="grid gap-5 border-b border-white/10 p-5 sm:p-8 xl:grid-cols-[0.8fr_1.2fr]">
+          <div className={profile.cardClass + " p-5"}>
+            <p className="font-mono text-xs uppercase tracking-[0.22em]" style={{ color: accent }}>{activePage}</p>
+            <h3 className="mt-3 text-3xl font-black uppercase text-white">{profile.sectionTitle}</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-300">{pageContent.description}</p>
+            <div className="mt-5 grid gap-2">
+              {pageContent.actions.map((action) => <button key={action} onClick={() => onDemoOnly(`${action} simulated.`)} className="border border-white/10 bg-white/8 px-4 py-3 text-left font-mono text-xs uppercase text-slate-200 hover:border-current" style={{ color: accent }}>{action}</button>)}
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {site.items.map((item, index) => <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />)}
+          </div>
+        </section>
+        <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest(profile.mood === "cyber" ? "Repair Operations System" : "Conversion Commerce Funnel")} />
+        <DemoCTASection title={profile.mood === "cyber" ? "Deploy a repair command center." : "Launch a conversion-heavy commerce funnel."} text="Urgency, intake, tracking, payment placeholders, analytics events, and internal workflows can be wired behind the demo UI." dark={dark} onRequest={() => onRequest(demo.recommendedPackage)} onDemoOnly={() => onDemoOnly("High-intent CTA previewed.")} profile={profile} />
+      </>
+    );
+  }
+
+  if (profile.mood === "restaurant") {
+    return (
+      <>
+        <section className="grid gap-0 border-b-4 border-[#5C4033] lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="bg-[#2b211b] p-5 text-[#F8F4EC] sm:p-8">
+            <p className="font-serif text-3xl text-[#E0A106]">Menu board</p>
+            <div className="mt-6 space-y-4">
+              {site.items.map((item) => (
+                <button key={item.name} onClick={onCart} className="flex w-full justify-between border-b border-[#F8F4EC]/18 pb-3 text-left font-serif text-lg">
+                  <span>{item.name}</span>
+                  <span className="text-[#E0A106]">{item.price}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest("Restaurant Ordering Flow")} />
+        </section>
+        <DemoGallery title="Community specials" items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
+        <DemoCTASection title="Build a local ordering system that feels like the restaurant." text="Menu browsing, pickup times, catering requests, job applications, and receipt-style checkout can be connected behind the storefront." dark={dark} onRequest={() => onRequest(demo.recommendedPackage)} onDemoOnly={() => onDemoOnly("Restaurant CTA previewed.")} profile={profile} />
+      </>
+    );
+  }
+
+  if (profile.mood === "realty") {
+    return (
+      <>
+        <section className="grid gap-5 border-b border-[#CBD5E1] p-5 sm:p-8 xl:grid-cols-[1.25fr_0.75fr]">
+          <div>
+            <DemoSearchFilter categories={site.categories} dark={dark} onFilter={(category) => onDemoOnly(`${category} property filter applied.`)} profile={profile} />
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {site.items.map((item, index) => <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />)}
+            </div>
+          </div>
+          <div className="min-h-[520px] rounded-2xl border border-[#CBD5E1] bg-[#E8DCCF] p-4">
+            <p className="font-semibold text-[#334155]">Map preview</p>
+            <div className="relative mt-4 h-[440px] overflow-hidden rounded-xl bg-[#dbeafe]">
+              <div className="absolute inset-0 opacity-70" style={{ backgroundImage: "linear-gradient(90deg,rgba(51,65,85,.16)_1px,transparent_1px),linear-gradient(rgba(51,65,85,.16)_1px,transparent_1px)", backgroundSize: "42px 42px" }} />
+              {site.items.slice(0, 4).map((item, index) => <span key={item.name} className="absolute rounded-full bg-[#3B82F6] px-3 py-1 text-xs font-bold text-white shadow-lg" style={{ left: `${18 + index * 17}%`, top: `${22 + (index % 2) * 34}%` }}>{item.price}</span>)}
+            </div>
+          </div>
+        </section>
+        <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest("Real Estate Lead Platform")} />
+        <DemoCTASection title="Build a property discovery platform." text="Listings, map views, agent profiles, showing requests, valuation forms, and lead capture can move from demo to production." dark={dark} onRequest={() => onRequest(demo.recommendedPackage)} onDemoOnly={() => onDemoOnly("Showing request previewed.")} profile={profile} />
+      </>
+    );
+  }
+
+  if (profile.mood === "outdoor") {
+    return (
+      <>
+        <section className="border-b border-[#2F5D50]/20 p-5 sm:p-8">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {site.items.map((item, index) => <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />)}
+          </div>
+        </section>
+        <section className="grid gap-0 border-b border-[#2F5D50]/20 lg:grid-cols-[1.2fr_0.8fr]">
+          <DemoGallery title="Before / after transformations" items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
+          <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest("Outdoor Services Quote Flow")} />
+        </section>
+        <DemoCTASection title="Create an outdoor transformation engine." text="Project galleries, quote requests, financing, service areas, reviews, and seasonal promotions can become a real growth platform." dark={dark} onRequest={() => onRequest(demo.recommendedPackage)} onDemoOnly={() => onDemoOnly("Outdoor quote previewed.")} profile={profile} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <section className={`grid gap-5 border-b p-5 sm:p-8 ${profile.mood === "legal" ? "border-[#C8A96B]/25 xl:grid-cols-[0.9fr_1.1fr]" : "border-[#CBD5E1] xl:grid-cols-[1.1fr_0.9fr]"}`}>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: accent }}>{profile.sectionTitle}</p>
+          <h3 className={`mt-3 text-3xl font-semibold ${headingColor}`}>{site.itemsTitle}</h3>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {site.items.map((item, index) => <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />)}
+          </div>
+        </div>
+        <div className={profile.cardClass + " p-5"}>
+          <h3 className={`text-2xl font-semibold ${headingColor}`}>{pageContent.title}</h3>
+          <p className={`mt-3 text-sm leading-6 ${mutedColor}`}>{pageContent.description}</p>
+          <DemoBookingForm site={site} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest("Production Workflow Build")} profile={profile} />
+        </div>
+      </section>
+      <section className={`grid gap-0 border-b ${profile.mood === "legal" ? "border-[#C8A96B]/25 lg:grid-cols-[0.8fr_1.2fr]" : "border-[#CBD5E1] lg:grid-cols-[1fr_1fr]"}`}>
+        <DemoGallery title={site.galleryTitle} items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
+        <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest(demo.recommendedPackage)} />
+      </section>
+      <DemoCTASection title={`Build a production ${demo.name} platform.`} text="The demo can be expanded into a full production system with secure workflows, analytics, content management, and business-specific operations." dark={dark} onRequest={() => onRequest(demo.recommendedPackage)} onDemoOnly={() => onDemoOnly("CTA previewed.")} profile={profile} />
+    </>
+  );
+}
+
+function DemoProofAndFlow({
+  site,
+  profile,
+  dark,
+  accent,
+  onDemoOnly,
+  onRequest
+}: {
+  site: DemoMiniSite;
+  profile: DemoDesignProfile;
+  dark: string;
+  accent: string;
+  onDemoOnly: (message: string) => void;
+  onRequest: () => void;
+}) {
+  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant";
+  return (
+    <section className={`p-5 sm:p-8 ${darkSurface ? "text-white" : "text-slate-950"}`}>
+      <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className={profile.cardClass + " p-5"}>
+          <DemoBookingForm site={site} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={onRequest} profile={profile} />
+        </div>
+        <div>
+          <h3 className={`text-2xl font-semibold ${darkSurface ? "text-white" : "text-slate-950"}`}>Proof and trust</h3>
+          <div className="mt-5 grid gap-4">
+            {site.reviews.map((review) => <DemoTestimonial key={review.name} review={review} accent={accent} profile={profile} />)}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function DemoNavbar({
   site,
   activePage,
   onPageChange,
   onCart,
-  dark
+  dark,
+  profile
 }: {
   site: DemoMiniSite;
   activePage: string;
   onPageChange: (page: string) => void;
   onCart: () => void;
   dark: string;
+  profile: DemoDesignProfile;
 }) {
   const pages = Array.from(new Set(["Home", ...site.nav]));
   return (
-    <header className="border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:px-6">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+    <header className={`backdrop-blur ${profile.navClass}`}>
+      <div className={`flex gap-3 ${profile.mood === "editorial" || profile.mood === "legal" ? "flex-col items-center text-center" : "flex-col xl:flex-row xl:items-center xl:justify-between"}`}>
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-lg text-white" style={{ backgroundColor: dark }}>
+          <div className={`flex items-center gap-3 ${profile.mood === "editorial" ? "flex-col" : ""}`}>
+            <div className={`${profile.mood === "cyber" ? "rounded border border-[#22C55E]/40 bg-[#101722]" : profile.mood === "restaurant" ? "rounded-full bg-[#C0392B]" : "rounded-lg"} grid h-10 w-10 place-items-center text-white`} style={{ backgroundColor: profile.mood === "cyber" ? undefined : dark }}>
               <Package className="h-5 w-5" />
             </div>
             <div>
-              <p className="font-semibold text-slate-950">{site.slug.split("-").map(capitalize).join(" ")}</p>
-              <p className="text-xs text-slate-500">{site.brandLine}</p>
+              <p className={`${profile.mood === "cyber" ? "font-mono uppercase text-[#22C55E]" : profile.mood === "legal" ? "font-serif text-[#C8A96B]" : "font-semibold"} ${profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant" ? "text-white" : "text-slate-950"}`}>{site.slug.split("-").map(capitalize).join(" ")}</p>
+              <p className={`text-xs ${profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant" ? "text-slate-300" : "text-slate-500"}`}>{site.brandLine}</p>
             </div>
           </div>
-          <button onClick={onCart} className="focus-ring rounded-lg border border-slate-200 p-2 text-slate-700 hover:bg-slate-50 xl:hidden" aria-label="Open cart">
+          <button onClick={onCart} className="focus-ring rounded-lg border border-current/20 p-2 xl:hidden" aria-label="Open cart">
             <ShoppingCart className="h-5 w-5" />
           </button>
         </div>
-        <nav className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin xl:pb-0">
+        <nav className={`flex overflow-x-auto pb-1 scrollbar-thin xl:pb-0 ${profile.mood === "restaurant" ? "gap-5" : profile.mood === "editorial" || profile.mood === "legal" ? "gap-6" : "gap-2"}`}>
           {pages.map((page) => (
             <button
               key={page}
               onClick={() => onPageChange(page)}
-              className={`focus-ring shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                activePage === page ? "text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              }`}
-              style={activePage === page ? { backgroundColor: dark } : undefined}
+              className={`focus-ring shrink-0 transition ${profile.navButtonClass} ${activePage === page ? profile.activeNavClass : ""}`}
             >
               {page}
             </button>
           ))}
         </nav>
-        <button onClick={onCart} className="focus-ring hidden rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 xl:inline-flex xl:items-center xl:gap-2">
+        <button onClick={onCart} className={`focus-ring hidden xl:inline-flex xl:items-center xl:gap-2 ${profile.cartButtonClass}`}>
           <ShoppingCart className="h-4 w-4" />
           Cart / request
         </button>
@@ -453,26 +1015,29 @@ function DemoPagePanel({
   site,
   dark,
   accent,
-  onDemoOnly
+  onDemoOnly,
+  profile = getDemoDesignProfile(site.slug)
 }: {
   pageContent: ReturnType<typeof getDemoPageContent>;
   site: DemoMiniSite;
   dark: string;
   accent: string;
   onDemoOnly: (message: string) => void;
+  profile?: DemoDesignProfile;
 }) {
+  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
   return (
-    <section className="grid gap-0 border-b border-slate-200 bg-white lg:grid-cols-[0.8fr_1.2fr]">
-      <div className="border-b border-slate-200 p-5 sm:p-8 lg:border-b-0 lg:border-r">
+    <section className={`grid gap-0 border-b lg:grid-cols-[0.8fr_1.2fr] ${darkSurface ? "border-white/10 bg-transparent" : "border-slate-200 bg-white"}`}>
+      <div className={`border-b p-5 sm:p-8 lg:border-b-0 lg:border-r ${darkSurface ? "border-white/10" : "border-slate-200"}`}>
         <p className="text-sm font-semibold uppercase tracking-[0.16em]" style={{ color: dark }}>{pageContent.label}</p>
-        <h3 className="mt-3 text-2xl font-semibold text-slate-950">{pageContent.title}</h3>
-        <p className="mt-3 text-sm leading-6 text-slate-600">{pageContent.description}</p>
+        <h3 className={`mt-3 text-2xl font-semibold ${darkSurface ? "text-white" : "text-slate-950"}`}>{pageContent.title}</h3>
+        <p className={`mt-3 text-sm leading-6 ${darkSurface ? "text-slate-300" : "text-slate-600"}`}>{pageContent.description}</p>
         <div className="mt-5 grid gap-2">
           {pageContent.actions.map((action) => (
             <button
               key={action}
               onClick={() => onDemoOnly(`${action} opens a polished simulated ${site.slug.replaceAll("-", " ")} workflow.`)}
-              className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-800 transition hover:bg-white"
+              className={`flex items-center justify-between px-4 py-3 text-left text-sm font-semibold transition ${profile.mood === "artisan" ? "rounded-full border border-[#D9B8A1] bg-[#F7F2EC] text-[#6B4F43]" : darkSurface ? "rounded border border-white/10 bg-white/8 text-slate-100 hover:bg-white/12" : "rounded-lg border border-slate-200 bg-slate-50 text-slate-800 hover:bg-white"}`}
             >
               {action}
               <ChevronRight className="h-4 w-4" />
@@ -482,13 +1047,13 @@ function DemoPagePanel({
       </div>
       <div className="grid gap-4 p-5 sm:p-8 md:grid-cols-3">
         {pageContent.cards.map((card) => (
-          <article key={card.title} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <article key={card.title} className={`${profile.cardClass} p-4`}>
             <div className="mb-4 h-24 overflow-hidden rounded-lg" style={{ background: `linear-gradient(135deg, ${accent}, ${dark})` }}>
               <DemoVisual siteSlug={site.slug} item={{ name: card.title, imageTone: accent }} accent={accent} compact />
             </div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{card.meta}</p>
-            <h4 className="mt-2 font-semibold text-slate-950">{card.title}</h4>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{card.text}</p>
+            <h4 className={`mt-2 font-semibold ${darkSurface ? "text-white" : "text-slate-950"}`}>{card.title}</h4>
+            <p className={`mt-2 text-sm leading-6 ${darkSurface ? "text-slate-300" : "text-slate-600"}`}>{card.text}</p>
           </article>
         ))}
       </div>
@@ -619,21 +1184,46 @@ function DemoVisual({ siteSlug, item, accent, compact = false }: { siteSlug: str
   );
 }
 
-function DemoProductCard({ item, siteSlug, dark, accent, onAdd }: { item: DemoItem; siteSlug: string; dark: string; accent: string; onAdd: () => void }) {
+function DemoProductCard({
+  item,
+  siteSlug,
+  dark,
+  accent,
+  onAdd,
+  profile = getDemoDesignProfile(siteSlug),
+  stagger = 0
+}: {
+  item: DemoItem;
+  siteSlug: string;
+  dark: string;
+  accent: string;
+  onAdd: () => void;
+  profile?: DemoDesignProfile;
+  stagger?: number;
+}) {
+  const darkCard = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
+  const buttonClass =
+    profile.mood === "editorial"
+      ? "mt-4 w-full border border-[#121212] bg-transparent px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#121212] transition hover:bg-[#121212] hover:text-white"
+      : profile.ctaClass + " mt-4 w-full";
   return (
-    <article className="group overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-      <div className="relative h-44 overflow-hidden" style={{ backgroundColor: item.imageTone || accent }}>
+    <article
+      className={`group overflow-hidden transition duration-300 ${profile.cardClass} ${
+        profile.mood === "artisan" ? (stagger % 2 ? "rotate-1 hover:rotate-0" : "-rotate-1 hover:rotate-0") : ""
+      } ${profile.mood === "velocity" ? "hover:scale-[1.025]" : "hover:-translate-y-1"}`}
+    >
+      <div className={`${profile.mood === "editorial" ? "h-72" : profile.mood === "realty" ? "h-56" : profile.mood === "restaurant" ? "h-48" : "h-44"} relative overflow-hidden`} style={{ backgroundColor: item.imageTone || accent }}>
         <DemoVisual siteSlug={siteSlug} item={item} accent={accent} />
         {item.badge ? <span className="absolute left-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-900">{item.badge}</span> : null}
       </div>
-      <div className="p-4">
+      <div className={profile.mood === "editorial" ? "px-1 py-5" : "p-4"}>
         <div className="flex items-start justify-between gap-3">
-          <h4 className="font-semibold text-slate-950">{item.name}</h4>
+          <h4 className={`${profile.mood === "restaurant" ? "font-serif text-xl" : profile.mood === "editorial" ? "font-serif text-2xl" : "font-semibold"} ${darkCard ? "text-white" : "text-slate-950"}`}>{item.name}</h4>
           {item.price ? <p className="shrink-0 text-sm font-bold" style={{ color: dark }}>{item.price}</p> : null}
         </div>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-        {item.meta ? <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{item.meta}</p> : null}
-        <button onClick={onAdd} className="mt-4 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90" style={{ backgroundColor: dark }}>
+        <p className={`mt-2 text-sm leading-6 ${darkCard ? "text-slate-300" : "text-slate-600"}`}>{item.description}</p>
+        {item.meta ? <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.14em] ${darkCard ? "text-slate-400" : "text-slate-500"}`}>{item.meta}</p> : null}
+        <button onClick={onAdd} className={buttonClass} style={profile.mood === "editorial" ? undefined : { backgroundColor: profile.mood === "velocity" || profile.mood === "cyber" ? undefined : dark }}>
           Add / preview
         </button>
       </div>
@@ -876,25 +1466,28 @@ function DemoBookingForm({
   dark,
   accent,
   onDemoOnly,
-  onRequest
+  onRequest,
+  profile = getDemoDesignProfile(site.slug)
 }: {
   site: DemoMiniSite;
   dark: string;
   accent: string;
   onDemoOnly: (message: string) => void;
   onRequest: () => void;
+  profile?: DemoDesignProfile;
 }) {
+  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant";
   return (
     <div>
-      <h3 className="text-2xl font-semibold text-slate-950">{site.flowTitle}</h3>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{site.flowDescription}</p>
+      <h3 className={`text-2xl font-semibold ${darkSurface ? "text-white" : "text-slate-950"}`}>{site.flowTitle}</h3>
+      <p className={`mt-2 text-sm leading-6 ${darkSurface ? "text-slate-300" : "text-slate-600"}`}>{site.flowDescription}</p>
       <div className="mt-5 grid gap-3">
         {site.flowFields.map((field, index) => (
           <label key={field} className="block">
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{field}</span>
+            <span className={`text-xs font-semibold uppercase tracking-[0.14em] ${darkSurface ? "text-slate-400" : "text-slate-500"}`}>{field}</span>
             <button
               onClick={() => onDemoOnly(`${field} selector opened for demo only.`)}
-              className="mt-2 flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-3 text-left text-sm font-semibold text-slate-800"
+              className={`mt-2 flex w-full items-center justify-between px-3 py-3 text-left text-sm font-semibold ${darkSurface ? "rounded border border-white/10 bg-white/8 text-slate-100" : "rounded-lg border border-slate-200 bg-white text-slate-800"}`}
             >
               {index === 0 ? site.categories[0] : "Choose option"}
               <ChevronRight className="h-4 w-4" />
@@ -902,19 +1495,19 @@ function DemoBookingForm({
           </label>
         ))}
       </div>
-      <div className="mt-5 grid gap-2 rounded-lg border border-slate-200 bg-white p-4">
+      <div className={`mt-5 grid gap-2 p-4 ${darkSurface ? "rounded border border-white/10 bg-white/8" : "rounded-lg border border-slate-200 bg-white"}`}>
         {site.flowSummary.slice(0, 3).map((summary) => (
-          <div key={summary} className="flex gap-2 text-sm text-slate-700">
+          <div key={summary} className={`flex gap-2 text-sm ${darkSurface ? "text-slate-200" : "text-slate-700"}`}>
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: accent }} />
             {summary}
           </div>
         ))}
       </div>
       <div className="mt-5 grid gap-2 sm:grid-cols-2">
-        <button onClick={onDemoOnly.bind(null, "Demo-only form submitted. Production builds save this to CRM and internal workflows.")} className="rounded-lg px-4 py-3 text-sm font-semibold text-white" style={{ backgroundColor: dark }}>
+        <button onClick={onDemoOnly.bind(null, "Demo-only form submitted. Production builds save this to CRM and internal workflows.")} className={profile.ctaClass} style={profile.mood === "velocity" || profile.mood === "cyber" ? undefined : { backgroundColor: dark }}>
           Preview submit
         </button>
-        <button onClick={onRequest} className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50">
+        <button onClick={onRequest} className={`px-4 py-3 text-sm font-semibold ${darkSurface ? "rounded border border-white/20 text-white hover:bg-white/10" : "rounded-lg border border-slate-300 bg-white text-slate-900 hover:bg-slate-50"}`}>
           Build this flow
         </button>
       </div>
@@ -935,17 +1528,28 @@ function DemoServiceCard({ service, dark, accent }: { service: DemoItem; dark: s
   );
 }
 
-function DemoSearchFilter({ categories, dark, onFilter }: { categories: string[]; dark: string; onFilter: (category: string) => void }) {
+function DemoSearchFilter({
+  categories,
+  dark,
+  onFilter,
+  profile = demoDesignProfiles["harbor-family-practice"]
+}: {
+  categories: string[];
+  dark: string;
+  onFilter: (category: string) => void;
+  profile?: DemoDesignProfile;
+}) {
+  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
   return (
-    <div className="w-full max-w-2xl rounded-lg border border-slate-200 bg-white p-3">
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-        <Search className="h-4 w-4 text-slate-500" />
-        <span className="text-sm text-slate-500">Search, filter, or browse mock records</span>
-        <Filter className="ml-auto h-4 w-4 text-slate-500" />
+    <div className={`w-full max-w-2xl p-3 ${profile.mood === "editorial" ? "border-y border-[#121212]/15 bg-transparent" : darkSurface ? "rounded border border-white/10 bg-white/8" : "rounded-lg border border-slate-200 bg-white"}`}>
+      <div className={`flex items-center gap-2 border-b pb-3 ${darkSurface ? "border-white/10" : "border-slate-200"}`}>
+        <Search className={`h-4 w-4 ${darkSurface ? "text-slate-400" : "text-slate-500"}`} />
+        <span className={`text-sm ${darkSurface ? "text-slate-300" : "text-slate-500"}`}>Search, filter, or browse mock records</span>
+        <Filter className={`ml-auto h-4 w-4 ${darkSurface ? "text-slate-400" : "text-slate-500"}`} />
       </div>
       <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
         {categories.map((category) => (
-          <button key={category} onClick={() => onFilter(category)} className="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <button key={category} onClick={() => onFilter(category)} className={`shrink-0 px-3 py-1 text-xs font-semibold ${profile.mood === "editorial" ? "border-b border-[#121212]/20 text-[#121212]" : darkSurface ? "rounded border border-white/10 text-slate-200 hover:bg-white/10" : "rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
             {category}
           </button>
         ))}
@@ -955,20 +1559,35 @@ function DemoSearchFilter({ categories, dark, onFilter }: { categories: string[]
   );
 }
 
-function DemoGallery({ title, items, dark, accent }: { title: string; items: DemoItem[]; dark: string; accent: string }) {
+function DemoGallery({
+  title,
+  items,
+  dark,
+  accent,
+  profile = demoDesignProfiles["crafted-commerce"],
+  siteSlug = "gallery"
+}: {
+  title: string;
+  items: DemoItem[];
+  dark: string;
+  accent: string;
+  profile?: DemoDesignProfile;
+  siteSlug?: string;
+}) {
+  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant";
   return (
-    <div>
-      <h3 className="text-2xl font-semibold text-slate-950">{title}</h3>
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+    <div className="p-5 sm:p-8">
+      <h3 className={`${profile.mood === "editorial" ? "font-serif text-5xl" : "text-2xl font-semibold"} ${darkSurface ? "text-white" : "text-slate-950"}`}>{title}</h3>
+      <div className={`mt-5 grid gap-4 ${profile.mood === "editorial" ? "sm:grid-cols-[1.2fr_.8fr_1fr]" : profile.mood === "outdoor" ? "sm:grid-cols-3" : "sm:grid-cols-3"}`}>
         {items.map((item, index) => (
-          <article key={item.name} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-            <div className="relative h-32 overflow-hidden" style={{ background: `linear-gradient(135deg, ${index % 2 ? accent : dark}, ${item.imageTone || "#f8fafc"})` }}>
-              <DemoVisual siteSlug="gallery" item={item} accent={accent} compact />
+          <article key={item.name} className={`overflow-hidden ${profile.cardClass} ${profile.mood === "artisan" && index === 1 ? "rotate-2" : ""}`}>
+            <div className={`relative overflow-hidden ${profile.mood === "editorial" ? "h-80" : profile.mood === "outdoor" ? "h-56" : "h-32"}`} style={{ background: `linear-gradient(135deg, ${index % 2 ? accent : dark}, ${item.imageTone || "#f8fafc"})` }}>
+              <DemoVisual siteSlug={siteSlug} item={item} accent={accent} compact />
             </div>
             <div className="p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{item.meta}</p>
-              <h4 className="mt-2 font-semibold text-slate-950">{item.name}</h4>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+              <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${darkSurface ? "text-slate-400" : "text-slate-500"}`}>{item.meta}</p>
+              <h4 className={`${profile.mood === "restaurant" ? "font-serif text-xl" : "font-semibold"} mt-2 ${darkSurface ? "text-white" : "text-slate-950"}`}>{item.name}</h4>
+              <p className={`mt-2 text-sm leading-6 ${darkSurface ? "text-slate-300" : "text-slate-600"}`}>{item.description}</p>
             </div>
           </article>
         ))}
@@ -977,38 +1596,39 @@ function DemoGallery({ title, items, dark, accent }: { title: string; items: Dem
   );
 }
 
-function DemoTestimonial({ review, accent }: { review: { name: string; quote: string; detail: string }; accent: string }) {
+function DemoTestimonial({ review, accent, profile = demoDesignProfiles["crafted-commerce"] }: { review: { name: string; quote: string; detail: string }; accent: string; profile?: DemoDesignProfile }) {
+  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant";
   return (
-    <blockquote className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <blockquote className={`${profile.cardClass} p-5`}>
       <div className="flex gap-1">
         {[0, 1, 2, 3, 4].map((item) => (
           <Star key={item} className="h-4 w-4 fill-current" style={{ color: accent }} />
         ))}
       </div>
-      <p className="mt-4 text-sm leading-6 text-slate-700">{review.quote}</p>
+      <p className={`mt-4 text-sm leading-6 ${darkSurface ? "text-slate-200" : "text-slate-700"}`}>{review.quote}</p>
       <div className="mt-4 flex items-center gap-3">
-        <div className="grid h-9 w-9 place-items-center rounded-full bg-slate-100">
-          <UserRound className="h-4 w-4 text-slate-500" />
+        <div className={`grid h-9 w-9 place-items-center rounded-full ${darkSurface ? "bg-white/10" : "bg-slate-100"}`}>
+          <UserRound className={`h-4 w-4 ${darkSurface ? "text-slate-300" : "text-slate-500"}`} />
         </div>
         <div>
-          <p className="text-sm font-semibold text-slate-950">{review.name}</p>
-          <p className="text-xs text-slate-500">{review.detail}</p>
+          <p className={`text-sm font-semibold ${darkSurface ? "text-white" : "text-slate-950"}`}>{review.name}</p>
+          <p className={`text-xs ${darkSurface ? "text-slate-400" : "text-slate-500"}`}>{review.detail}</p>
         </div>
       </div>
     </blockquote>
   );
 }
 
-function DemoCTASection({ title, text, dark, onRequest, onDemoOnly }: { title: string; text: string; dark: string; onRequest: () => void; onDemoOnly: () => void }) {
+function DemoCTASection({ title, text, dark, onRequest, onDemoOnly, profile = demoDesignProfiles["crafted-commerce"] }: { title: string; text: string; dark: string; onRequest: () => void; onDemoOnly: () => void; profile?: DemoDesignProfile }) {
   return (
-    <section className="border-b border-slate-200 bg-slate-950 p-5 text-white sm:p-8">
+    <section className={`border-b p-5 text-white sm:p-8 ${profile.mood === "artisan" ? "border-[#D9B8A1]/50 bg-[#8DAA91]" : profile.mood === "editorial" ? "border-[#121212]/10 bg-[#121212]" : profile.mood === "restaurant" ? "border-[#5C4033] bg-[#C0392B]" : profile.mood === "outdoor" ? "border-[#2F5D50]/20 bg-[#2F5D50]" : profile.mood === "realty" ? "border-[#CBD5E1] bg-[#334155]" : "border-white/10 bg-slate-950"}`}>
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
         <div>
-          <h3 className="text-2xl font-semibold">{title}</h3>
+          <h3 className={`${profile.mood === "editorial" || profile.mood === "artisan" || profile.mood === "restaurant" || profile.mood === "outdoor" || profile.mood === "legal" ? "font-serif" : ""} text-2xl font-semibold`}>{title}</h3>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{text}</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <button onClick={onRequest} className="rounded-lg bg-obsidian-green px-5 py-3 text-sm font-semibold text-slate-950">Get AI estimate</button>
+          <button onClick={onRequest} className={profile.ctaClass}>Get AI estimate</button>
           <button onClick={onDemoOnly} className="rounded-lg border border-white/20 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10" style={{ boxShadow: `0 0 0 1px ${dark}` }}>
             Contact preview
           </button>
@@ -1018,16 +1638,16 @@ function DemoCTASection({ title, text, dark, onRequest, onDemoOnly }: { title: s
   );
 }
 
-function DemoFooter({ site, dark, onNavigate }: { site: DemoMiniSite; dark: string; onNavigate: (page: string) => void }) {
+function DemoFooter({ site, dark, onNavigate, profile = getDemoDesignProfile(site.slug) }: { site: DemoMiniSite; dark: string; onNavigate: (page: string) => void; profile?: DemoDesignProfile }) {
   return (
-    <footer className="grid gap-6 bg-white p-5 text-slate-700 sm:p-8 md:grid-cols-[1fr_1fr_1fr]">
+    <footer className={`grid gap-6 p-5 sm:p-8 md:grid-cols-[1fr_1fr_1fr] ${profile.footerClass}`}>
       <div>
-        <p className="font-semibold text-slate-950">{site.slug.split("-").map(capitalize).join(" ")}</p>
+        <p className={`${profile.mood === "editorial" || profile.mood === "legal" || profile.mood === "restaurant" || profile.mood === "artisan" ? "font-serif text-xl" : "font-semibold"}`}>{site.slug.split("-").map(capitalize).join(" ")}</p>
         <p className="mt-2 text-sm leading-6">{site.brandLine}</p>
       </div>
       <div className="grid gap-2 text-sm">
         {site.footerLinks.map((link) => (
-          <button key={link} onClick={() => onNavigate(link)} className="w-fit font-semibold hover:underline" style={{ color: dark }}>
+          <button key={link} onClick={() => onNavigate(link)} className="w-fit font-semibold hover:underline">
             {link}
           </button>
         ))}
