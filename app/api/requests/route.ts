@@ -67,7 +67,7 @@ export async function POST(request: Request) {
         notes: parsed.notes,
         marketingConsent: parsed.marketingConsent,
         termsAcknowledged: parsed.termsAcknowledged,
-        status: "AI_REVIEWED",
+        status: "AI_QUOTED",
         aiQuote: {
           create: {
             buildCostMin: quote.buildCostMin,

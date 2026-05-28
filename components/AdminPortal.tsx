@@ -17,7 +17,9 @@ type AdminUser = {
 const mockRequests = [
   { id: "REQ-1024", client: "K&K Kustom Kreations", demo: "Crafted Commerce", status: "AI Reviewed", complexity: "Moderate", estimate: "$4.9k-$9.6k", owner: "Admin" },
   { id: "REQ-1025", client: "Northwood Chiropractic", demo: "Northwood Chiropractic", status: "Under Review", complexity: "Moderate", estimate: "$6.4k-$12.2k", owner: "Owner" },
-  { id: "REQ-1026", client: "Tech Rescue Co.", demo: "Obsidian Tech E.R.", status: "New", complexity: "High", estimate: "$11k-$24k", owner: "Owner" }
+  { id: "REQ-1026", client: "Tech Rescue Co.", demo: "Obsidian Tech E.R.", status: "New", complexity: "High", estimate: "$11k-$24k", owner: "Owner" },
+  { id: "REQ-1027", client: "BluePeak Realty", demo: "BluePeak Realty", status: "Client Accepted Estimate", complexity: "Moderate", estimate: "$6.8k-$13.4k", owner: "Checkout" },
+  { id: "REQ-1028", client: "Evergreen Outdoor Living", demo: "Evergreen Outdoor Living", status: "Admin Review Requested", complexity: "Low", estimate: "$3.2k-$6.1k", owner: "Admin" }
 ];
 
 const mockInvoices = [
@@ -220,10 +222,10 @@ function RequestsPanel({ role }: { role: RoleName }) {
       />
       <DataPanel title="Request workspace">
         <div className="grid gap-4 lg:grid-cols-3">
-          {["Internal notes", "Assignment system", "Communication history", "Attached files", "Approval workflow", "Revision requests"].map((item) => (
+          {["AI estimate review", "Accepted estimates", "Manual review requests", "Pricing adjustment", "Updated checkout links", "Revision requests"].map((item) => (
             <div key={item} className="rounded-lg border border-white/10 bg-white/6 p-4">
               <p className="font-semibold">{item}</p>
-              <p className="mt-2 text-sm text-slate-400">Ready for persisted records and admin actions.</p>
+              <p className="mt-2 text-sm text-slate-400">Ready for persisted records, final invoice approval, and resendable checkout links.</p>
             </div>
           ))}
         </div>

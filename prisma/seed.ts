@@ -51,21 +51,38 @@ async function main() {
   const superAdminEmail = "isaac.rutledgev@obsidian-systems.tech";
   const temporaryPassword = process.env.SEED_SUPER_ADMIN_TEMP_PASSWORD || randomBytes(18).toString("base64url");
   const passwordHash = await bcrypt.hash(temporaryPassword, 12);
+  const existingSuperAdmin = await prisma.user.findUnique({ where: { email: superAdminEmail } });
+  const shouldResetPassword = process.env.RESET_SUPER_ADMIN_PASSWORD === "1";
 
-  await prisma.user.upsert({
-    where: { email: superAdminEmail },
-    update: { roleId: ownerRole.id },
-    create: {
+  if (existingSuperAdmin) {
+    await prisma.user.update({
+      where: { email: superAdminEmail },
+      data: {
+        roleId: ownerRole.id,
+        ...(shouldResetPassword
+          ? {
+              passwordHash,
+              mustChangePassword: true
+            }
+          : {})
+      }
+    });
+  } else {
+    await prisma.user.create({
+      data: {
       name: "Isaac Rutledge",
       email: superAdminEmail,
       passwordHash,
       roleId: ownerRole.id,
       mustChangePassword: true
-    }
-  });
+      }
+    });
+  }
 
-  if (!process.env.SEED_SUPER_ADMIN_TEMP_PASSWORD) {
+  if (!existingSuperAdmin || shouldResetPassword) {
     console.info(`Generated temporary Super Admin password for ${superAdminEmail}: ${temporaryPassword}`);
+  } else {
+    console.info(`Super Admin already exists for ${superAdminEmail}. Set RESET_SUPER_ADMIN_PASSWORD=1 to generate a new temporary password.`);
   }
 
   for (const demo of demoTemplates) {

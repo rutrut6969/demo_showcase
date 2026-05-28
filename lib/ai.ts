@@ -30,10 +30,10 @@ export type GeneratedQuote = {
 };
 
 const complexityDefaults: Record<ComplexityLevel, { min: number; max: number; timeframe: string; retainer: string }> = {
-  LOW: { min: 1800, max: 4200, timeframe: "2-4 weeks", retainer: "Essential Retainer" },
-  MODERATE: { min: 4500, max: 9500, timeframe: "4-7 weeks", retainer: "Commerce Retainer" },
-  HIGH: { min: 10000, max: 22000, timeframe: "8-12 weeks", retainer: "Enterprise Retainer" },
-  CUSTOM_ENTERPRISE: { min: 22000, max: 55000, timeframe: "12+ weeks", retainer: "Enterprise Retainer" }
+  LOW: { min: 180000, max: 420000, timeframe: "2-4 weeks", retainer: "Essential Retainer" },
+  MODERATE: { min: 450000, max: 950000, timeframe: "4-7 weeks", retainer: "Commerce Retainer" },
+  HIGH: { min: 1000000, max: 2200000, timeframe: "8-12 weeks", retainer: "Enterprise Retainer" },
+  CUSTOM_ENTERPRISE: { min: 2200000, max: 5500000, timeframe: "12+ weeks", retainer: "Enterprise Retainer" }
 };
 
 export async function generateAIQuote(input: QuoteInput): Promise<GeneratedQuote> {
@@ -97,7 +97,7 @@ function normalizeComplexity(value: unknown): ComplexityLevel | null {
 function buildFallbackQuote(input: QuoteInput, complexity: ComplexityLevel): GeneratedQuote {
   const defaults = complexityDefaults[complexity];
   const featureCount = input.desiredFeatures.length;
-  const featureAdjustment = Math.min(featureCount * 350, 3500);
+  const featureAdjustment = Math.min(featureCount * 35000, 350000);
   return {
     buildCostMin: defaults.min + Math.round(featureAdjustment * 0.5),
     buildCostMax: defaults.max + featureAdjustment,

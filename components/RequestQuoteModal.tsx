@@ -56,6 +56,10 @@ export function RequestQuoteModal({
   const [features, setFeatures] = useState<string[]>([]);
   const [result, setResult] = useState<QuoteResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewReason, setReviewReason] = useState("");
+  const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const selectedDemo = metadata.selectedDemo || "Custom platform";
 
   const featureSummary = useMemo(() => features.join(", "), [features]);
@@ -138,6 +142,56 @@ export function RequestQuoteModal({
       });
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function acceptEstimate() {
+    if (!result?.quote) return;
+    setCheckoutLoading(true);
+    setReviewMessage(null);
+    try {
+      const response = await fetch("/api/checkout/accept-estimate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId: result.requestId,
+          selectedDemo: metadata.selectedDemo,
+          quote: result.quote
+        })
+      });
+      const data = await response.json();
+      trackPlatformEvent("InvoiceApproved", {
+        requestId: result.requestId,
+        selectedDemo: metadata.selectedDemo,
+        checkoutPersisted: data.persisted
+      });
+      window.location.href = data.checkoutUrl || `/invoices/local-checkout-${Date.now()}`;
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }
+
+  async function requestAdminReview() {
+    setReviewLoading(true);
+    setReviewMessage(null);
+    try {
+      await fetch("/api/checkout/manual-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId: result?.requestId,
+          selectedDemo: metadata.selectedDemo,
+          reason: reviewReason
+        })
+      });
+      trackPlatformEvent("ContactClicked", {
+        action: "Request Admin Review",
+        requestId: result?.requestId,
+        selectedDemo: metadata.selectedDemo
+      });
+      setReviewMessage("Manual review requested. Obsidian Systems will review the estimate before final checkout.");
+    } finally {
+      setReviewLoading(false);
     }
   }
 
@@ -248,6 +302,28 @@ export function RequestQuoteModal({
                   </div>
                 </div>
                 <p className="rounded-lg border border-white/15 bg-black/50 p-4 text-sm text-slate-300">{result.quote.scopeSummary}</p>
+                <div className="rounded-lg border border-white/15 bg-slate-900/90 p-4">
+                  <p className="text-sm font-semibold text-white">Next step</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    Accept this estimate to open a branded checkout page, or ask for manual review before checkout.
+                  </p>
+                  <div className="mt-4 grid gap-2">
+                    <Button loading={checkoutLoading} onClick={acceptEstimate} type="button" className="w-full">
+                      Accept Estimate & Checkout
+                    </Button>
+                    <textarea
+                      value={reviewReason}
+                      onChange={(event) => setReviewReason(event.target.value)}
+                      rows={3}
+                      className="w-full rounded-lg border border-white/15 bg-slate-950 px-3 py-3 text-sm text-white outline-none focus:border-obsidian-green/70"
+                      placeholder="Optional note for manual review"
+                    />
+                    <Button loading={reviewLoading} onClick={requestAdminReview} type="button" variant="secondary" className="w-full">
+                      Request Admin Review
+                    </Button>
+                    {reviewMessage ? <p className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-200">{reviewMessage}</p> : null}
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="mt-6 space-y-3">

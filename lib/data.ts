@@ -353,11 +353,17 @@ export const adminModules = [
 
 export const requestStatuses = [
   "New",
+  "AI Quoted",
   "AI Reviewed",
   "Under Review",
   "Approved",
+  "Client Accepted Estimate",
+  "Checkout Pending",
   "Invoice Sent",
   "Deposit Paid",
+  "Admin Review Requested",
+  "Admin Reviewed",
+  "Updated Estimate Sent",
   "In Progress",
   "Completed",
   "Archived",

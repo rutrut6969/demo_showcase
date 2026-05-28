@@ -767,10 +767,11 @@ function DemoIdentitySections({
   if (profile.mood === "artisan") {
     return (
       <>
-        <section className="grid gap-6 border-b border-[#D9B8A1]/70 p-5 sm:p-8 lg:grid-cols-[1fr_0.75fr]">
+        <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
+        <section className="grid gap-6 border-b border-[#D9B8A1]/70 p-5 sm:p-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.65fr)]">
           <div>
             <p className="font-serif text-2xl text-[#6B4F43]">Meet the maker</p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="mt-5 grid min-w-0 gap-5 md:grid-cols-2">
               {site.items.map((item, index) => (
                 <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />
               ))}
@@ -790,6 +791,7 @@ function DemoIdentitySections({
   if (profile.mood === "editorial") {
     return (
       <>
+        <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
         <section className="border-b border-[#121212]/10 p-5 sm:p-10">
           <div className="flex items-end justify-between gap-6">
             <div>
@@ -816,6 +818,7 @@ function DemoIdentitySections({
   if (profile.mood === "velocity" || profile.mood === "cyber") {
     return (
       <>
+        <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
         <section className="grid gap-5 border-b border-white/10 p-5 sm:p-8 xl:grid-cols-[0.8fr_1.2fr]">
           <div className={profile.cardClass + " p-5"}>
             <p className="font-mono text-xs uppercase tracking-[0.22em]" style={{ color: accent }}>{activePage}</p>
@@ -838,6 +841,7 @@ function DemoIdentitySections({
   if (profile.mood === "restaurant") {
     return (
       <>
+        <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
         <section className="grid gap-0 border-b-4 border-[#5C4033] lg:grid-cols-[0.9fr_1.1fr]">
           <div className="bg-[#2b211b] p-5 text-[#F8F4EC] sm:p-8">
             <p className="font-serif text-3xl text-[#E0A106]">Menu board</p>
@@ -861,6 +865,7 @@ function DemoIdentitySections({
   if (profile.mood === "realty") {
     return (
       <>
+        <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
         <section className="grid gap-5 border-b border-[#CBD5E1] p-5 sm:p-8 xl:grid-cols-[1.25fr_0.75fr]">
           <div>
             <DemoSearchFilter categories={site.categories} dark={dark} onFilter={(category) => onDemoOnly(`${category} property filter applied.`)} profile={profile} />
@@ -885,6 +890,7 @@ function DemoIdentitySections({
   if (profile.mood === "outdoor") {
     return (
       <>
+        <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
         <section className="border-b border-[#2F5D50]/20 p-5 sm:p-8">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {site.items.map((item, index) => <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />)}
@@ -901,6 +907,7 @@ function DemoIdentitySections({
 
   return (
     <>
+      <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
       <section className={`grid gap-5 border-b p-5 sm:p-8 ${profile.mood === "legal" ? "border-[#C8A96B]/25 xl:grid-cols-[0.9fr_1.1fr]" : "border-[#CBD5E1] xl:grid-cols-[1.1fr_0.9fr]"}`}>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: accent }}>{profile.sectionTitle}</p>
@@ -955,6 +962,171 @@ function DemoProofAndFlow({
       </div>
     </section>
   );
+}
+
+function DemoSubpageSpotlight({
+  site,
+  activePage,
+  pageContent,
+  profile,
+  dark,
+  accent,
+  onDemoOnly
+}: {
+  site: DemoMiniSite;
+  activePage: string;
+  pageContent: ReturnType<typeof getDemoPageContent>;
+  profile: DemoDesignProfile;
+  dark: string;
+  accent: string;
+  onDemoOnly: (message: string) => void;
+}) {
+  const pageItems = getSubpageItems(site, activePage);
+
+  if (profile.mood === "restaurant") {
+    return (
+      <section className="border-b-4 border-[#5C4033] bg-[#F8F4EC] p-5 sm:p-8">
+        <div className="grid gap-5 lg:grid-cols-[0.7fr_1.3fr]">
+          <div className="rounded-md bg-[#2b211b] p-5 text-[#F8F4EC] shadow-[8px_8px_0_rgba(92,64,51,.18)]">
+            <p className="font-serif text-2xl text-[#E0A106]">{activePage} tickets</p>
+            <p className="mt-3 text-sm leading-6 text-[#F8F4EC]/75">{pageContent.description}</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {pageItems.map((item) => (
+              <button key={item.title} onClick={() => onDemoOnly(`${item.title} added to restaurant demo flow.`)} className="rounded-md border-2 border-[#5C4033]/25 bg-white p-4 text-left shadow-[4px_4px_0_rgba(224,161,6,.25)]">
+                <p className="font-serif text-xl text-[#C0392B]">{item.title}</p>
+                <p className="mt-2 text-sm leading-6 text-[#5C4033]">{item.text}</p>
+                <p className="mt-3 text-xs font-black uppercase tracking-[0.16em] text-[#556B2F]">{item.meta}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (profile.mood === "medical" || profile.mood === "wellness") {
+    return (
+      <section className={`border-b p-5 sm:p-8 ${profile.mood === "medical" ? "border-[#CBD5E1] bg-[#F8FBFF]" : "border-[#A8C3B0]/35 bg-white"}`}>
+        <div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: dark }}>{activePage} center</p>
+            <h3 className={`mt-3 ${profile.mood === "wellness" ? "font-serif" : ""} text-3xl font-semibold text-[#243447]`}>{pageContent.title}</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-600">{pageContent.description}</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {pageItems.map((item) => (
+              <article key={item.title} className={`${profile.cardClass} p-4`}>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{item.meta}</p>
+                <h4 className="mt-2 font-semibold text-slate-950">{item.title}</h4>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (profile.mood === "legal") {
+    return (
+      <section className="border-b border-[#C8A96B]/25 bg-[#0F172A] p-5 text-white sm:p-8">
+        <div className="grid gap-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#C8A96B]">{activePage} brief</p>
+          {pageItems.map((item, index) => (
+            <div key={item.title} className="grid gap-4 border-t border-[#C8A96B]/20 py-5 md:grid-cols-[120px_1fr_0.5fr]">
+              <p className="font-serif text-3xl text-[#C8A96B]">0{index + 1}</p>
+              <div>
+                <h4 className="font-serif text-2xl text-white">{item.title}</h4>
+                <p className="mt-2 text-sm leading-6 text-[#CBD5E1]">{item.text}</p>
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C8A96B]">{item.meta}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (profile.mood === "realty") {
+    return (
+      <section className="border-b border-[#CBD5E1] bg-white p-5 sm:p-8">
+        <div className="grid gap-4 lg:grid-cols-[0.7fr_1.3fr]">
+          <div>
+            <h3 className="text-3xl font-semibold text-[#0F172A]">{pageContent.title}</h3>
+            <p className="mt-3 text-sm leading-6 text-[#475569]">{pageContent.description}</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {pageItems.map((item, index) => (
+              <article key={item.title} className="overflow-hidden rounded-2xl border border-[#CBD5E1] bg-white shadow-sm">
+                <div className="h-28 bg-[#3B82F6]" style={{ background: `linear-gradient(135deg, ${index % 2 ? "#E8DCCF" : "#3B82F6"}, #ffffff)` }} />
+                <div className="p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#3B82F6]">{item.meta}</p>
+                  <h4 className="mt-2 font-semibold text-[#0F172A]">{item.title}</h4>
+                  <p className="mt-2 text-sm leading-6 text-[#475569]">{item.text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (profile.mood === "outdoor") {
+    return (
+      <section className="border-b border-[#2F5D50]/20 bg-[#F7F4ED] p-5 sm:p-8">
+        <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="grid gap-3 md:grid-cols-3">
+            {pageItems.map((item, index) => (
+              <article key={item.title} className="rounded-[24px] border border-[#2F5D50]/20 bg-white/80 p-4 shadow-sm">
+                <div className="mb-4 h-24 rounded-[18px]" style={{ background: `linear-gradient(135deg, ${index === 1 ? "#EA580C" : "#2F5D50"}, #F7F4ED)` }} />
+                <h4 className="font-serif text-xl text-[#2F5D50]">{item.title}</h4>
+                <p className="mt-2 text-sm leading-6 text-[#475569]">{item.text}</p>
+                <p className="mt-3 text-xs font-bold uppercase tracking-[0.16em] text-[#EA580C]">{item.meta}</p>
+              </article>
+            ))}
+          </div>
+          <div className="rounded-[28px] bg-[#2F5D50] p-6 text-[#F7F4ED]">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#EA580C]">{activePage}</p>
+            <h3 className="mt-3 font-serif text-3xl">{pageContent.title}</h3>
+            <p className="mt-3 text-sm leading-6 text-[#F7F4ED]/75">{pageContent.description}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber";
+  return (
+    <section className={`border-b p-5 sm:p-8 ${darkSurface ? "border-white/10 bg-white/[0.03] text-white" : "border-slate-200 bg-white text-slate-950"}`}>
+      <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: accent }}>{profile.label}</p>
+          <h3 className="mt-3 text-3xl font-semibold">{pageContent.title}</h3>
+          <p className={`mt-3 text-sm leading-6 ${darkSurface ? "text-slate-300" : "text-slate-600"}`}>{pageContent.description}</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {pageItems.map((item) => (
+            <button key={item.title} onClick={() => onDemoOnly(`${item.title} opened for demo only.`)} className={`${profile.cardClass} p-4 text-left`}>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: accent }}>{item.meta}</p>
+              <h4 className={`mt-2 font-semibold ${darkSurface ? "text-white" : "text-slate-950"}`}>{item.title}</h4>
+              <p className={`mt-2 text-sm leading-6 ${darkSurface ? "text-slate-300" : "text-slate-600"}`}>{item.text}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function getSubpageItems(site: DemoMiniSite, activePage: string) {
+  const source = activePage === "Home" ? [...site.items, ...site.services] : [...site.gallery, ...site.services, ...site.items];
+  return source.slice(0, 3).map((item, index) => ({
+    title: item.name,
+    text: item.description || site.flowSummary[index] || site.heroText,
+    meta: item.meta || item.price || site.categories[index] || "Preview"
+  }));
 }
 
 function DemoNavbar({

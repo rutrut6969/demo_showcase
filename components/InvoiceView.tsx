@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, CreditCard, FilePenLine, ShieldCheck, XCircle } from "lucide-react";
 import { Badge, Button } from "@/components/ui";
@@ -33,12 +33,55 @@ const sampleInvoice = {
     "Deposit reserves production time and starts implementation after final scope approval. Remaining balance and managed platform retainer are handled according to the accepted proposal."
 };
 
+type InvoicePayload = typeof sampleInvoice & {
+  selectedDemo?: string;
+};
+
 export function InvoiceView({ invoiceId }: { invoiceId: string }) {
   const [status, setStatus] = useState(sampleInvoice.status);
   const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
-  const invoice = { ...sampleInvoice, id: invoiceId };
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [invoice, setInvoice] = useState<InvoicePayload>({ ...sampleInvoice, id: invoiceId });
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadInvoice() {
+      if (invoiceId.startsWith("local-")) return;
+      const response = await fetch(`/api/invoices/${invoiceId}`);
+      if (!response.ok) return;
+      const data = await response.json();
+      if (!active || !data.invoice) return;
+      setInvoice({
+        id: data.invoice.id,
+        invoiceNumber: data.invoice.invoiceNumber,
+        status: data.invoice.status,
+        clientName: data.invoice.client?.businessName || data.invoice.client?.name || data.invoice.request?.businessName || "Project client",
+        clientEmail: data.invoice.client?.email || data.invoice.request?.email || "client@example.com",
+        projectSummary: data.invoice.projectSummary,
+        scopeBreakdown: data.invoice.scopeBreakdown,
+        lineItems: data.invoice.lineItems,
+        depositDue: data.invoice.depositDue,
+        total: data.invoice.total,
+        retainerRecommendation: data.invoice.retainerRecommendation || "Essential Retainer starting at $200/month",
+        timelineEstimate: data.invoice.timelineEstimate || "Manual review pending",
+        terms: data.invoice.terms,
+        selectedDemo: data.invoice.request?.selectedDemo
+      });
+      setStatus(data.invoice.status);
+    }
+
+    loadInvoice().catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [invoiceId]);
 
   async function payDeposit() {
+    if (!termsAccepted) {
+      setPaymentMessage("Please acknowledge the estimate disclaimer and checkout terms before continuing.");
+      return;
+    }
     setPaymentMessage("Processing Square-powered deposit placeholder...");
     const response = await fetch("/api/payments/square", {
       method: "POST",
@@ -52,23 +95,31 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-slate-200 bg-slate-950 text-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-950">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white">
             <ArrowLeft className="h-4 w-4" /> Obsidian Systems LLC
           </Link>
-          <Badge className="border-slate-200 bg-slate-100 text-slate-700">{status}</Badge>
+          <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">{status}</Badge>
         </div>
       </header>
 
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-6 rounded-lg border border-violet-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-violet-700">AI estimate checkout</p>
+          <h1 className="mt-3 text-3xl font-semibold">Review your Obsidian Systems project checkout</h1>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            This estimate is AI-generated and may be adjusted after manual review depending on scope, integrations, content, timeline, and technical requirements.
+          </p>
+        </div>
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
             <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-violet-700">Custom project invoice</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-violet-700">Custom project checkout</p>
                 <h1 className="mt-3 text-3xl font-semibold">{invoice.invoiceNumber}</h1>
                 <p className="mt-2 text-slate-600">{invoice.projectSummary}</p>
+                {invoice.selectedDemo ? <p className="mt-2 text-sm font-semibold text-slate-500">Selected style: {invoice.selectedDemo}</p> : null}
               </div>
               <div className="text-left sm:text-right">
                 <p className="font-semibold">{invoice.clientName}</p>
@@ -77,7 +128,7 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
             </div>
 
             <div className="grid gap-4 border-b border-slate-200 py-6 sm:grid-cols-3">
-              <Info label="Total" value={formatCurrency(invoice.total)} />
+              <Info label="Estimated build" value={formatCurrency(invoice.total)} />
               <Info label="Deposit due" value={formatCurrency(invoice.depositDue)} />
               <Info label="Timeline" value={invoice.timelineEstimate} />
             </div>
@@ -156,7 +207,14 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
             <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <p className="font-semibold">Secure deposit payment</p>
               <p className="mt-2 text-sm text-slate-600">Square-powered payment form placeholder. Add Square Web Payments SDK credentials to activate card entry.</p>
+              <label className="mt-4 flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} className="mt-1 h-4 w-4 accent-emerald-500" />
+                I acknowledge this AI-generated estimate may change after manual review.
+              </label>
               <Button className="mt-4 w-full" onClick={payDeposit}><CreditCard className="h-4 w-4" /> Pay {formatCurrency(invoice.depositDue)} deposit</Button>
+              <button className="mt-3 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setStatus("Revision Requested")}>
+                Request Manual Review
+              </button>
               {paymentMessage ? <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{paymentMessage}</p> : null}
             </div>
           </aside>

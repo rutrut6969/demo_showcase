@@ -20,6 +20,15 @@ export async function signIn(email: string, password: string) {
   const user = await prisma.user.findUnique({
     where: { email },
     include: { role: true }
+  }).catch(async (error) => {
+    await prisma.siteLog.create({
+      data: {
+        source: "auth",
+        message: "Sign in failed because database tables are not ready",
+        metadata: { error: error instanceof Error ? error.message : String(error) }
+      }
+    }).catch(() => undefined);
+    return null;
   });
 
   if (!user || user.suspended) return null;

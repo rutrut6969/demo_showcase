@@ -13,6 +13,30 @@ const updateSchema = z.object({
   terms: z.string().optional()
 });
 
+export async function GET(_request: Request, { params }: { params: { id: string } }) {
+  try {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: params.id },
+      include: {
+        client: true,
+        request: true,
+        lineItems: true
+      }
+    });
+
+    if (!invoice) {
+      return NextResponse.json({ invoice: null }, { status: 404 });
+    }
+
+    return NextResponse.json({ invoice });
+  } catch (error) {
+    return NextResponse.json({
+      invoice: null,
+      warning: error instanceof Error ? error.message : "Invoice unavailable"
+    }, { status: 503 });
+  }
+}
+
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const body = updateSchema.parse(await request.json());
   const invoice = await prisma.invoice.update({
