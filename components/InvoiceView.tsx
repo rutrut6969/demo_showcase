@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, CreditCard, FilePenLine, ShieldCheck, XCircle } from "lucide-react";
 import { Badge, Button } from "@/components/ui";
@@ -15,7 +15,7 @@ const sampleInvoice = {
   projectSummary: "Custom vendor ecommerce platform inspired by Crafted Commerce.",
   scopeBreakdown: [
     "Premium storefront with product catalog and featured collections",
-    "Square checkout and deposit workflow integration placeholder",
+    "Custom Square Web Payments checkout and deposit workflow",
     "Operations dashboard for inventory, events, and lead management",
     "AI-assisted product upload concept and analytics event mapping"
   ],
@@ -37,11 +37,36 @@ type InvoicePayload = typeof sampleInvoice & {
   selectedDemo?: string;
 };
 
+type SquareConfig = {
+  environment: "sandbox" | "production";
+  applicationId: string | null;
+  locationId: string | null;
+  afterpayEnabled: boolean;
+};
+
+declare global {
+  interface Window {
+    Square?: {
+      payments(applicationId: string, locationId: string): {
+        card(): Promise<{ attach(selector: string): Promise<void>; tokenize(): Promise<{ status: string; token?: string; errors?: Array<{ message?: string }> }> }>;
+        afterpayClearpay?: (options: { amount: string; currencyCode: string }) => Promise<{ attach(selector: string): Promise<void>; tokenize(): Promise<{ status: string; token?: string; errors?: Array<{ message?: string }> }> }>;
+      };
+    };
+  }
+}
+
 export function InvoiceView({ invoiceId }: { invoiceId: string }) {
   const [status, setStatus] = useState(sampleInvoice.status);
   const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [invoice, setInvoice] = useState<InvoicePayload>({ ...sampleInvoice, id: invoiceId });
+  const [squareConfig, setSquareConfig] = useState<SquareConfig | null>(null);
+  const [squareReady, setSquareReady] = useState(false);
+  const [afterpayReady, setAfterpayReady] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const cardRef = useRef<{ tokenize(): Promise<{ status: string; token?: string; errors?: Array<{ message?: string }> }> } | null>(null);
+  const afterpayRef = useRef<{ tokenize(): Promise<{ status: string; token?: string; errors?: Array<{ message?: string }> }> } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -77,20 +102,114 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
     };
   }, [invoiceId]);
 
-  async function payDeposit() {
+  useEffect(() => {
+    let active = true;
+    fetch("/api/payments/square")
+      .then((response) => response.json())
+      .then((config: SquareConfig) => {
+        if (active) setSquareConfig(config);
+      })
+      .catch(() => {
+        if (active) setPaymentError("Square configuration could not be loaded.");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!squareConfig?.applicationId || !squareConfig.locationId) return;
+    const config = squareConfig;
+    const applicationId = squareConfig.applicationId;
+    const locationId = squareConfig.locationId;
+    let active = true;
+
+    async function initializeSquare() {
+      try {
+        await loadSquareScript(config.environment);
+        if (!active || !window.Square) return;
+        const payments = window.Square.payments(applicationId, locationId);
+        const card = await payments.card();
+        await card.attach("#square-card-container");
+        cardRef.current = card;
+        setSquareReady(true);
+
+        if (config.afterpayEnabled && payments.afterpayClearpay) {
+          try {
+            const afterpay = await payments.afterpayClearpay({ amount: (invoice.depositDue / 100).toFixed(2), currencyCode: "USD" });
+            await afterpay.attach("#square-afterpay-container");
+            afterpayRef.current = afterpay;
+            setAfterpayReady(true);
+          } catch {
+            setAfterpayReady(false);
+          }
+        }
+      } catch (error) {
+        setPaymentError(error instanceof Error ? error.message : "Square payment form failed to initialize.");
+      }
+    }
+
+    initializeSquare();
+    return () => {
+      active = false;
+    };
+  }, [invoice.depositDue, squareConfig]);
+
+  async function payDeposit(method: "card" | "afterpay" = "card") {
     if (!termsAccepted) {
-      setPaymentMessage("Please acknowledge the estimate disclaimer and checkout terms before continuing.");
+      setPaymentError("Please acknowledge the estimate disclaimer and checkout terms before continuing.");
       return;
     }
-    setPaymentMessage("Processing Square-powered deposit placeholder...");
+    const paymentSource = method === "afterpay" ? afterpayRef.current : cardRef.current;
+    if (!paymentSource) {
+      setPaymentError("The selected payment method is not available yet.");
+      return;
+    }
+
+    setProcessingPayment(true);
+    setPaymentError(null);
+    setPaymentMessage("Tokenizing payment securely with Square...");
+    const tokenResult = await paymentSource.tokenize();
+    if (tokenResult.status !== "OK" || !tokenResult.token) {
+      setProcessingPayment(false);
+      setPaymentMessage(null);
+      setPaymentError(tokenResult.errors?.map((error) => error.message).filter(Boolean).join(" ") || "Square could not tokenize this payment method.");
+      return;
+    }
+
+    setPaymentMessage("Processing deposit with Square...");
     const response = await fetch("/api/payments/square", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ invoiceId: invoice.id, amount: invoice.depositDue })
+      body: JSON.stringify({ invoiceId: invoice.id, sourceId: tokenResult.token, idempotencyKey: crypto.randomUUID() })
     });
     const data = await response.json();
-    setStatus("Deposit Paid");
-    setPaymentMessage(data.message || "Deposit payment logged successfully.");
+    setProcessingPayment(false);
+    if (!response.ok || data.ok === false) {
+      setPaymentMessage(null);
+      setPaymentError(data.error || data.message || "Square payment failed.");
+      return;
+    }
+    setStatus("DEPOSIT_PAID");
+    setPaymentMessage(data.alreadyPaid ? "This deposit was already paid." : "Deposit payment completed successfully.");
+  }
+
+  async function respondToInvoice(nextStatus: "APPROVED" | "REVISION_REQUESTED" | "DENIED") {
+    setPaymentError(null);
+    if (invoice.id.startsWith("local-")) {
+      setStatus(nextStatus);
+      return;
+    }
+    const response = await fetch(`/api/invoices/${invoice.id}/respond`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: nextStatus })
+    });
+    if (!response.ok) {
+      setPaymentError("Could not save your invoice response. Please try again.");
+      return;
+    }
+    setStatus(nextStatus);
   }
 
   return (
@@ -192,13 +311,13 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
             <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <p className="font-semibold">Client response</p>
               <div className="mt-4 grid gap-2">
-                <button className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-transparent bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400" onClick={() => setStatus("Approved")}>
+                <button className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-transparent bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400" onClick={() => respondToInvoice("APPROVED")}>
                   <CheckCircle2 className="h-4 w-4" /> Approve invoice
                 </button>
-                <button className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50" onClick={() => setStatus("Revision Requested")}>
+                <button className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50" onClick={() => respondToInvoice("REVISION_REQUESTED")}>
                   <FilePenLine className="h-4 w-4" /> Request revision
                 </button>
-                <button className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100" onClick={() => setStatus("Denied")}>
+                <button className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100" onClick={() => respondToInvoice("DENIED")}>
                   <XCircle className="h-4 w-4" /> Deny invoice
                 </button>
               </div>
@@ -206,22 +325,53 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
 
             <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <p className="font-semibold">Secure deposit payment</p>
-              <p className="mt-2 text-sm text-slate-600">Square-powered payment form placeholder. Add Square Web Payments SDK credentials to activate card entry.</p>
+              <p className="mt-2 text-sm text-slate-600">Card details are collected by Square Web Payments SDK inside this custom checkout. Secret Square credentials never enter the browser.</p>
               <label className="mt-4 flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                 <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} className="mt-1 h-4 w-4 accent-emerald-500" />
                 I acknowledge this AI-generated estimate may change after manual review.
               </label>
-              <Button className="mt-4 w-full" onClick={payDeposit}><CreditCard className="h-4 w-4" /> Pay {formatCurrency(invoice.depositDue)} deposit</Button>
-              <button className="mt-3 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => setStatus("Revision Requested")}>
+              {squareConfig?.applicationId && squareConfig.locationId ? (
+                <>
+                  <div id="square-card-container" className="mt-4 rounded-lg border border-slate-200 bg-white p-3" />
+                  <Button loading={processingPayment} disabled={!squareReady} className="mt-4 w-full" onClick={() => payDeposit("card")}><CreditCard className="h-4 w-4" /> Pay {formatCurrency(invoice.depositDue)} deposit</Button>
+                  {squareConfig.afterpayEnabled ? (
+                    <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-sm font-semibold">Afterpay / Clearpay</p>
+                      <div id="square-afterpay-container" className="mt-3" />
+                      <Button loading={processingPayment} disabled={!afterpayReady} variant="secondary" className="mt-3 w-full" onClick={() => payDeposit("afterpay")}>Pay with Afterpay</Button>
+                      {!afterpayReady ? <p className="mt-2 text-xs text-slate-500">Afterpay is not available for this account, amount, currency, or location.</p> : null}
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Square Web Payments is not configured. Add frontend Square application and location IDs to enable custom checkout.</p>
+              )}
+              <button className="mt-3 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => respondToInvoice("REVISION_REQUESTED")}>
                 Request Manual Review
               </button>
               {paymentMessage ? <p className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{paymentMessage}</p> : null}
+              {paymentError ? <p className="mt-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-800">{paymentError}</p> : null}
             </div>
           </aside>
         </div>
       </section>
     </main>
   );
+}
+
+function loadSquareScript(environment: "sandbox" | "production") {
+  return new Promise<void>((resolve, reject) => {
+    if (window.Square) {
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = environment === "production" ? "https://web.squarecdn.com/v1/square.js" : "https://sandbox.web.squarecdn.com/v1/square.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Unable to load Square Web Payments SDK."));
+    document.head.appendChild(script);
+  });
 }
 
 function Info({ label, value }: { label: string; value: string }) {

@@ -1,21 +1,16 @@
 type SquarePaymentInput = {
   invoiceId: string;
-  sourceId?: string;
+  sourceId: string;
   amount: number;
   currency?: string;
+  idempotencyKey: string;
 };
 
 export async function createSquareDepositPayment(input: SquarePaymentInput) {
   const squareConfig = getSquareConfig();
   const configured = Boolean(squareConfig.accessToken && squareConfig.locationId);
   if (!configured) {
-    return {
-      ok: true,
-      mode: "placeholder",
-      squarePaymentId: `sq-placeholder-${input.invoiceId}`,
-      message: "Square credentials are not configured. Payment was logged as a placeholder.",
-      environment: squareConfig.environment
-    };
+    return { ok: false, mode: "not_configured", message: "Square credentials are not configured.", environment: squareConfig.environment };
   }
 
   const endpoint =
@@ -31,8 +26,8 @@ export async function createSquareDepositPayment(input: SquarePaymentInput) {
       "Square-Version": "2025-04-16"
     },
     body: JSON.stringify({
-      source_id: input.sourceId || "cnon:card-nonce-ok",
-      idempotency_key: `${input.invoiceId}-${Date.now()}`,
+      source_id: input.sourceId,
+      idempotency_key: input.idempotencyKey,
       amount_money: {
         amount: input.amount,
         currency: input.currency || "USD"
@@ -47,15 +42,28 @@ export async function createSquareDepositPayment(input: SquarePaymentInput) {
     ok: response.ok,
     mode: "square",
     squarePaymentId: data.payment?.id,
+    status: data.payment?.status,
     data
   };
+}
+
+export function getSquareFrontendConfig() {
+  const config = getSquareConfig();
+  return {
+    environment: config.environment,
+    applicationId: config.applicationId || null,
+    locationId: config.locationId || null,
+    afterpayEnabled: process.env.SQUARE_ENABLE_AFTERPAY === "1"
+  };
+}
+
+export function getSquareWebhookSignatureKey() {
+  return process.env.SQUARE_WEBHOOK_SIGNATURE_KEY || "";
 }
 
 export function getSquareConfig() {
   const environment = process.env.SQUARE_ENVIRONMENT === "production" ? "production" : "sandbox";
 
-  // TODO: When the Square Web Payments SDK form is added, expose only applicationId
-  // and locationId to the frontend. Keep accessToken server-side only.
   if (environment === "production") {
     return {
       environment,

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Download, GripVertical, Menu, Plus, Shield, X } from "lucide-react";
 import type { RoleName } from "@prisma/client";
 import { Badge, Button, StatCard } from "@/components/ui";
-import { adminModules, approvalRules, demoTemplates, pipelineStages, requestStatuses, retainerTiers } from "@/lib/data";
+import type { AdminPortalData } from "@/lib/admin-data";
+import { adminModules, approvalRules, pipelineStages, requestStatuses } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 type AdminUser = {
@@ -14,21 +15,7 @@ type AdminUser = {
   role: RoleName;
 };
 
-const mockRequests = [
-  { id: "REQ-1024", client: "K&K Kustom Kreations", demo: "Crafted Commerce", status: "AI Reviewed", complexity: "Moderate", estimate: "$4.9k-$9.6k", owner: "Admin" },
-  { id: "REQ-1025", client: "Northwood Chiropractic", demo: "Northwood Chiropractic", status: "Under Review", complexity: "Moderate", estimate: "$6.4k-$12.2k", owner: "Owner" },
-  { id: "REQ-1026", client: "Tech Rescue Co.", demo: "Obsidian Tech E.R.", status: "New", complexity: "High", estimate: "$11k-$24k", owner: "Owner" },
-  { id: "REQ-1027", client: "BluePeak Realty", demo: "BluePeak Realty", status: "Client Accepted Estimate", complexity: "Moderate", estimate: "$6.8k-$13.4k", owner: "Checkout" },
-  { id: "REQ-1028", client: "Evergreen Outdoor Living", demo: "Evergreen Outdoor Living", status: "Admin Review Requested", complexity: "Low", estimate: "$3.2k-$6.1k", owner: "Admin" }
-];
-
-const mockInvoices = [
-  { id: "INV-2026-041", client: "K&K Kustom Kreations", status: "Admin Reviewed", total: "$8,900", deposit: "$2,500" },
-  { id: "INV-2026-042", client: "Pete's Kitchen", status: "Sent", total: "$4,400", deposit: "$1,500" },
-  { id: "INV-2026-043", client: "BluePeak Realty", status: "Revision Requested", total: "$7,800", deposit: "$2,000" }
-];
-
-export function AdminPortal({ user }: { user: AdminUser }) {
+export function AdminPortal({ user, data }: { user: AdminUser; data: AdminPortalData }) {
   const [moduleSlug, setModuleSlug] = useState("dashboard");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const activeModule = adminModules.find((module) => module.slug === moduleSlug) || adminModules[0];
@@ -65,6 +52,9 @@ export function AdminPortal({ user }: { user: AdminUser }) {
                   <p className="text-sm font-semibold text-white">{user.name}</p>
                   <p className="text-xs text-slate-400">{user.email}</p>
                 </div>
+                <Link href="/admin/logout" className="focus-ring rounded-lg border border-white/12 px-3 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10">
+                  Logout
+                </Link>
               </div>
             </div>
           </header>
@@ -84,12 +74,16 @@ export function AdminPortal({ user }: { user: AdminUser }) {
                 <p className="mt-2 max-w-3xl text-slate-300">{activeModule.description}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="secondary"><Download className="h-4 w-4" /> Export</Button>
-                <Button><Plus className="h-4 w-4" /> New record</Button>
+                <Link href="/api/exports/clients" className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/12 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15">
+                  <Download className="h-4 w-4" /> Export clients
+                </Link>
+                <Link href="/demos" className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-transparent bg-obsidian-green px-4 py-2 text-sm font-semibold text-obsidian-950 shadow-lg shadow-obsidian-green/20 hover:bg-emerald-300">
+                  <Plus className="h-4 w-4" /> New request
+                </Link>
               </div>
             </div>
 
-            <ModuleContent slug={moduleSlug} role={user.role} roleCapabilities={roleCapabilities} />
+            <ModuleContent slug={moduleSlug} role={user.role} roleCapabilities={roleCapabilities} data={data} />
           </div>
         </section>
       </div>
@@ -148,34 +142,34 @@ function AdminNav({ active, onChoose }: { active: string; onChoose: (slug: strin
   );
 }
 
-function ModuleContent({ slug, role, roleCapabilities }: { slug: string; role: RoleName; roleCapabilities: string[] }) {
-  if (slug === "dashboard") return <Dashboard roleCapabilities={roleCapabilities} />;
-  if (slug === "requests") return <RequestsPanel role={role} />;
-  if (slug === "clients") return <CrmPanel />;
-  if (slug === "invoices") return <InvoicesPanel />;
-  if (slug === "pipeline") return <PipelinePanel />;
-  if (slug === "demos") return <DemoManagementPanel />;
-  if (slug === "ai-control") return <AiControlPanel />;
-  if (slug === "feature-toggles") return <FeatureTogglesPanel />;
-  if (slug === "retainers") return <RetainersPanel />;
-  if (slug === "analytics") return <AnalyticsPanel />;
+function ModuleContent({ slug, role, roleCapabilities, data }: { slug: string; role: RoleName; roleCapabilities: string[]; data: AdminPortalData }) {
+  if (slug === "dashboard") return <Dashboard roleCapabilities={roleCapabilities} data={data} />;
+  if (slug === "requests") return <RequestsPanel role={role} data={data} />;
+  if (slug === "clients") return <CrmPanel data={data} />;
+  if (slug === "invoices") return <InvoicesPanel data={data} />;
+  if (slug === "pipeline") return <PipelinePanel data={data} />;
+  if (slug === "demos") return <DemoManagementPanel data={data} />;
+  if (slug === "ai-control") return <AiControlPanel data={data} />;
+  if (slug === "feature-toggles") return <FeatureTogglesPanel data={data} />;
+  if (slug === "retainers") return <RetainersPanel data={data} />;
+  if (slug === "analytics") return <AnalyticsPanel data={data} />;
+  if (slug === "users") return <UsersPanel data={data} />;
+  if (slug === "logs" || slug === "audit") return <LogsPanel data={data} />;
   return <GenericModule slug={slug} />;
 }
 
-function Dashboard({ roleCapabilities }: { roleCapabilities: string[] }) {
+function Dashboard({ roleCapabilities, data }: { roleCapabilities: string[]; data: AdminPortalData }) {
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="New requests" value="12" detail="4 came from demo CTAs this week." />
-        <StatCard label="Pending approvals" value="7" detail="2 require Super Admin review." />
-        <StatCard label="Invoices awaiting payment" value="$8.5k" detail="3 deposits open through Square." />
-        <StatCard label="Active retainers" value="8" detail="Essential and Commerce plans monitored." />
+        <StatCard label="New requests" value={String(data.dashboard.newRequests)} detail="Live request records needing attention." />
+        <StatCard label="Pending approvals" value={String(data.dashboard.pendingApprovals)} detail="AI/manual review states awaiting staff." />
+        <StatCard label="Invoices awaiting payment" value={data.dashboard.openInvoiceTotal} detail="Open deposit balance from invoices." />
+        <StatCard label="Paid deposits" value={String(data.dashboard.paidDeposits)} detail="Persisted payment records marked paid." />
       </div>
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <DataPanel title="Recent activity">
-          {["AI quote generated for Crafted Commerce", "Invoice viewed by Pete's Kitchen", "Role audit completed for Site Overseer", "Square payment placeholder logged"].map((item) => (
-            <ActivityRow key={item} title={item} detail="Just now" />
-          ))}
+          {data.activity.length ? data.activity.map((item) => <ActivityRow key={item} title={item} detail="Latest log" />) : <EmptyState text="No activity has been logged yet." />}
         </DataPanel>
         <DataPanel title="Role capabilities">
           <div className="flex flex-wrap gap-2">
@@ -186,15 +180,15 @@ function Dashboard({ roleCapabilities }: { roleCapabilities: string[] }) {
         </DataPanel>
       </div>
       <div className="grid gap-4 xl:grid-cols-3">
-        <DataPanel title="Traffic analytics"><MetricList items={["Demo views: 1,248", "CTA clicks: 214", "Request conversion: 9.8%", "Top demo: Obsidian Tech E.R."]} /></DataPanel>
-        <DataPanel title="Project pipeline"><MetricList items={["Lead: 9", "AI Quoted: 6", "Development: 3", "Retainer Active: 8"]} /></DataPanel>
-        <DataPanel title="Site health"><MetricList items={["Frontend: healthy", "API: healthy", "AI: fallback-ready", "Square: sandbox placeholder"]} /></DataPanel>
+        <DataPanel title="Traffic analytics"><MetricList items={[`Tracked events: ${data.analytics.length}`, `AI quotes: ${data.dashboard.aiQuotes}`, `Requests: ${data.requests.length}`, `Clients: ${data.clients.length}`]} /></DataPanel>
+        <DataPanel title="Project pipeline"><MetricList items={[`Projects: ${data.projects.length}`, `Invoices: ${data.invoices.length}`, `Retainers: ${data.retainers.length}`, `Active retainers: ${data.dashboard.activeRetainers}`]} /></DataPanel>
+        <DataPanel title="Site health"><MetricList items={data.siteHealth} /></DataPanel>
       </div>
     </div>
   );
 }
 
-function RequestsPanel({ role }: { role: RoleName }) {
+function RequestsPanel({ role, data }: { role: RoleName; data: AdminPortalData }) {
   return (
     <div className="space-y-5">
       <DataPanel title="Complexity approval rules">
@@ -210,38 +204,29 @@ function RequestsPanel({ role }: { role: RoleName }) {
       <ResponsiveTable
         title="Incoming requests"
         headers={["Request", "Client", "Demo", "Status", "Complexity", "AI Estimate", "Approver"]}
-        rows={mockRequests.map((request) => [
+        rows={data.requests.map((request) => [
           request.id,
           request.client,
           request.demo,
           request.status,
           request.complexity,
           request.estimate,
-          canApprove(role, request.complexity) ? "You can approve" : request.owner
+          canApprove(role, request.complexity) ? "You can approve" : request.approver
         ])}
       />
       <DataPanel title="Request workspace">
-        <div className="grid gap-4 lg:grid-cols-3">
-          {["AI estimate review", "Accepted estimates", "Manual review requests", "Pricing adjustment", "Updated checkout links", "Revision requests"].map((item) => (
-            <div key={item} className="rounded-lg border border-white/10 bg-white/6 p-4">
-              <p className="font-semibold">{item}</p>
-              <p className="mt-2 text-sm text-slate-400">Ready for persisted records, final invoice approval, and resendable checkout links.</p>
-            </div>
-          ))}
-        </div>
+        {data.requests.length ? <MetricList items={data.requests.slice(0, 8).map((request) => `${request.client}: ${request.status} (${request.estimate})`)} /> : <EmptyState text="No project requests have been submitted yet." />}
       </DataPanel>
     </div>
   );
 }
 
-function CrmPanel() {
+function CrmPanel({ data }: { data: AdminPortalData }) {
   const filters = ["All leads", "Approved clients", "Past clients", "Retainer clients", "Ecommerce customers", "Abandoned quote requests", "Demo-interest category", "Location/service area", "Consent status"];
   const exports = ["Meta/Facebook Custom Audiences", "Google Ads Customer Match", "Email marketing", "CRM backups", "Lead reports", "Customer reports"];
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
-      <DataPanel title="Client records">
-        <MetricList items={["Name, business, email, phone, address/location", "Consent, prior requests, projects, invoices, retainers", "Notes, communication logs, uploaded assets", "Linked demo interest and project history"]} />
-      </DataPanel>
+      <ResponsiveTable title="Client records" headers={["Client", "Email", "Phone", "Source", "Requests", "Invoices", "Consent"]} rows={data.clients.map((client) => [client.name, client.email, client.phone, client.source, client.requests, client.invoices, client.consent])} />
       <DataPanel title="CSV export tools">
         <div className="grid gap-2">
           {exports.map((item) => <Button key={item} variant="secondary" className="justify-start"><Download className="h-4 w-4" /> {item}</Button>)}
@@ -256,10 +241,11 @@ function CrmPanel() {
   );
 }
 
-function InvoicesPanel() {
+function InvoicesPanel({ data }: { data: AdminPortalData }) {
   return (
     <div className="space-y-5">
-      <ResponsiveTable title="Square-backed invoices" headers={["Invoice", "Client", "Status", "Total", "Deposit"]} rows={mockInvoices.map((invoice) => [invoice.id, invoice.client, invoice.status, invoice.total, invoice.deposit])} />
+      <ResponsiveTable title="Square-backed invoices" headers={["Invoice", "Client", "Status", "Total", "Deposit", "Paid"]} rows={data.invoices.map((invoice) => [invoice.invoice, invoice.client, invoice.status, invoice.total, invoice.deposit, invoice.paid])} />
+      <ResponsiveTable title="Payment records" headers={["Invoice", "Client", "Status", "Amount", "Method", "Square Payment"]} rows={data.payments.map((payment) => [payment.invoice, payment.client, payment.status, payment.amount, payment.method, payment.squarePaymentId])} />
       <DataPanel title="Invoice workflow">
         <div className="grid gap-3 md:grid-cols-4">
           {["AI Generated", "Admin Reviewed", "Sent / Viewed", "Approved / Deposit Paid"].map((step, index) => (
@@ -275,21 +261,20 @@ function InvoicesPanel() {
   );
 }
 
-function RetainersPanel() {
+function RetainersPanel({ data }: { data: AdminPortalData }) {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
-      {retainerTiers.map((tier) => (
-        <DataPanel key={tier.name} title={tier.name}>
-          <p className="text-2xl font-semibold text-white">{tier.price}</p>
-          <p className="mt-3 text-sm leading-6 text-slate-300">{tier.description}</p>
-          <MetricList items={["Billing cycle", "Payment status", "Hosting status", "Managed domains", "Maintenance notes", "Square subscription status"]} />
+      {data.retainers.map((retainer) => (
+        <DataPanel key={`${retainer.client}-${retainer.name}`} title={retainer.name}>
+          <p className="text-2xl font-semibold text-white">{retainer.price}</p>
+          <MetricList items={[`Client: ${retainer.client}`, `Status: ${retainer.status}`, `Renewal: ${retainer.renewal}`]} />
         </DataPanel>
       ))}
     </div>
   );
 }
 
-function PipelinePanel() {
+function PipelinePanel({ data }: { data: AdminPortalData }) {
   return (
     <div className="overflow-x-auto pb-3 scrollbar-thin">
       <div className="grid min-w-[1180px] grid-cols-6 gap-3">
@@ -299,10 +284,13 @@ function PipelinePanel() {
               <p className="text-sm font-semibold">{stage}</p>
               <GripVertical className="h-4 w-4 text-slate-500" />
             </div>
-            <div className="mt-3 rounded-lg border border-white/10 bg-obsidian-950/70 p-3">
-              <p className="text-sm font-semibold">Project {index + 1}</p>
-              <p className="mt-2 text-xs text-slate-400">Drag-and-drop ready stage card.</p>
-            </div>
+            {data.projects.filter((project) => project.stage === stage).slice(0, 3).map((project) => (
+              <div key={project.id} className="mt-3 rounded-lg border border-white/10 bg-obsidian-950/70 p-3">
+                <p className="text-sm font-semibold">{project.name}</p>
+                <p className="mt-2 text-xs text-slate-400">{project.client}</p>
+              </div>
+            ))}
+            {!data.projects.filter((project) => project.stage === stage).length ? <p className="mt-3 text-xs text-slate-500">No projects in this stage.</p> : null}
           </div>
         ))}
       </div>
@@ -310,41 +298,35 @@ function PipelinePanel() {
   );
 }
 
-function DemoManagementPanel() {
+function DemoManagementPanel({ data }: { data: AdminPortalData }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {demoTemplates.map((demo) => (
+      {data.demos.map((demo) => (
         <div key={demo.slug} className="rounded-lg border border-white/10 bg-white/6 p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-semibold">{demo.name}</p>
-              <p className="mt-1 text-sm text-slate-400">{demo.type}</p>
+              <p className="mt-1 text-sm text-slate-400">{demo.category}</p>
             </div>
             <Badge>{demo.complexity}</Badge>
           </div>
-          <p className="mt-4 text-sm leading-6 text-slate-300">{demo.description}</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {demo.features.slice(0, 3).map((feature) => <Badge key={feature}>{feature}</Badge>)}
-          </div>
+          <MetricList items={[`Package: ${demo.package}`, `Visible: ${demo.visible}`]} />
         </div>
       ))}
     </div>
   );
 }
 
-function AiControlPanel() {
+function AiControlPanel({ data }: { data: AdminPortalData }) {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      {["AI quote prompt", "Pricing rules", "Complexity scoring rules", "Quote output format", "AI proposal prompts", "Lead scoring prompt", "Manual override settings"].map((item) => (
-        <DataPanel key={item} title={item}>
-          <p className="text-sm text-slate-300">Editable control surface for owner-approved AI behavior. Changes should be audit logged and role restricted.</p>
-        </DataPanel>
-      ))}
+      <DataPanel title="AI quote status"><MetricList items={[`Generated quotes: ${data.dashboard.aiQuotes}`, ...data.siteHealth.filter((item) => item.startsWith("AI:"))]} /></DataPanel>
+      <DataPanel title="AI quote review queue">{data.requests.length ? <MetricList items={data.requests.filter((request) => request.status.includes("AI") || request.status.includes("Review")).slice(0, 8).map((request) => `${request.client}: ${request.status}`)} /> : <EmptyState text="No AI quotes are awaiting review." />}</DataPanel>
     </div>
   );
 }
 
-function FeatureTogglesPanel() {
+function FeatureTogglesPanel({ data }: { data: AdminPortalData }) {
   const modules = ["Ecommerce", "Events", "CRM", "Repair Intake", "Medical Booking", "Restaurant Ordering", "AI Quotes", "Invoicing", "Retainers", "Analytics", "Client Portal"];
   return (
     <DataPanel title="Deployment profile modules">
@@ -362,16 +344,21 @@ function FeatureTogglesPanel() {
   );
 }
 
-function AnalyticsPanel() {
+function AnalyticsPanel({ data }: { data: AdminPortalData }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {["Site traffic", "Demo popularity", "Request conversion rates", "AI quote acceptance rates", "Top-performing demos", "Client sources", "Revenue estimates", "Retainer metrics", "CTA clicks", "Funnel dropoff"].map((metric) => (
-        <DataPanel key={metric} title={metric}>
-          <p className="text-3xl font-semibold text-white">{Math.floor(Math.random() * 80) + 12}</p>
-          <p className="mt-2 text-sm text-slate-400">Analytics event table ready for live tracking.</p>
-        </DataPanel>
-      ))}
-    </div>
+    <ResponsiveTable title="Recent analytics events" headers={["Event", "Demo", "Source", "Visitor", "Created"]} rows={data.analytics.map((event) => [event.event, event.demo, event.source, event.visitor, event.created])} />
+  );
+}
+
+function UsersPanel({ data }: { data: AdminPortalData }) {
+  return (
+    <ResponsiveTable title="Admin users and roles" headers={["Name", "Email", "Role", "Suspended", "Password"]} rows={data.users.map((user) => [user.name, user.email, user.role, user.suspended, user.passwordChange])} />
+  );
+}
+
+function LogsPanel({ data }: { data: AdminPortalData }) {
+  return (
+    <ResponsiveTable title="System logs" headers={["Severity", "Source", "Message", "Created"]} rows={data.logs.map((log) => [log.severity, log.source, log.message, log.created])} />
   );
 }
 
@@ -411,23 +398,29 @@ function DataPanel({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
+function EmptyState({ text }: { text: string }) {
+  return <p className="rounded-lg border border-white/10 bg-white/6 p-4 text-sm text-slate-400">{text}</p>;
+}
+
 function ResponsiveTable({ title, headers, rows }: { title: string; headers: string[]; rows: string[][] }) {
   return (
     <DataPanel title={title}>
-      <div className="overflow-x-auto scrollbar-thin">
-        <table className="min-w-[780px] w-full border-separate border-spacing-y-2 text-left text-sm">
-          <thead className="text-xs uppercase tracking-[0.14em] text-slate-500">
-            <tr>{headers.map((header) => <th key={header} className="px-3 py-2">{header}</th>)}</tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.join("-")} className="rounded-lg bg-white/6">
-                {row.map((cell) => <td key={cell} className="px-3 py-3 text-slate-200 first:rounded-l-lg last:rounded-r-lg">{cell}</td>)}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {rows.length ? (
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="min-w-[780px] w-full border-separate border-spacing-y-2 text-left text-sm">
+            <thead className="text-xs uppercase tracking-[0.14em] text-slate-500">
+              <tr>{headers.map((header) => <th key={header} className="px-3 py-2">{header}</th>)}</tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={`${index}-${row.join("-")}`} className="rounded-lg bg-white/6">
+                  {row.map((cell, cellIndex) => <td key={`${cellIndex}-${cell}`} className="px-3 py-3 text-slate-200 first:rounded-l-lg last:rounded-r-lg">{cell}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : <EmptyState text="No records found." />}
     </DataPanel>
   );
 }

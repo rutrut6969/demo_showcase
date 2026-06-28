@@ -1,4 +1,5 @@
 import { AdminPortal } from "@/components/AdminPortal";
+import { getAdminPortalData } from "@/lib/admin-data";
 import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -8,6 +9,7 @@ export default async function AdminPage() {
   const session = await getSessionUser().catch(() => null);
   if (!session) redirect("/admin/login");
   if (session.mustChangePassword) redirect("/admin/password");
+  const data = await getAdminPortalData();
 
-  return <AdminPortal user={session} />;
+  return <AdminPortal user={session} data={data} />;
 }

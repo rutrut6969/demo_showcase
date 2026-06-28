@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { requireAdminSession } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 const invoiceSchema = z.object({
@@ -19,6 +20,8 @@ const invoiceSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const auth = await requireAdminSession("requests:view");
+  if (auth.response) return auth.response;
   const body = invoiceSchema.parse(await request.json());
   const invoice = await prisma.invoice.create({
     data: {

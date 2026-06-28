@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { requireAdminSession } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 const updateSchema = z.object({
@@ -38,6 +39,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+  const auth = await requireAdminSession("requests:view");
+  if (auth.response) return auth.response;
   const body = updateSchema.parse(await request.json());
   const invoice = await prisma.invoice.update({
     where: { id: params.id },
