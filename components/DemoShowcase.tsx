@@ -778,7 +778,6 @@ function DemoIdentitySections({
             </div>
           </div>
           <div className="min-w-0 space-y-5">
-            <DemoPagePanel pageContent={pageContent} site={site} dark={dark} accent={accent} onDemoOnly={onDemoOnly} profile={profile} />
             <DemoGallery title="Customer creation gallery" items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
           </div>
         </section>
@@ -940,7 +939,7 @@ function DemoIdentitySections({
       </section>
       <section className={`grid min-w-0 gap-0 border-b ${profile.mood === "legal" ? "border-[#C8A96B]/25 lg:grid-cols-[0.8fr_1.2fr]" : "border-[#CBD5E1] lg:grid-cols-[1fr_1fr]"}`}>
         <DemoGallery title={site.galleryTitle} items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
-        <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest(demo.recommendedPackage)} />
+        <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest(demo.recommendedPackage)} showForm={false} />
       </section>
       <DemoCTASection title={`Build a production ${demo.name} platform.`} text="The demo can be expanded into a full production system with secure workflows, analytics, content management, and business-specific operations." dark={dark} onRequest={() => onRequest(demo.recommendedPackage)} onDemoOnly={() => onDemoOnly("CTA previewed.")} profile={profile} />
     </>
@@ -953,7 +952,8 @@ function DemoProofAndFlow({
   dark,
   accent,
   onDemoOnly,
-  onRequest
+  onRequest,
+  showForm = true
 }: {
   site: DemoMiniSite;
   profile: DemoDesignProfile;
@@ -961,17 +961,20 @@ function DemoProofAndFlow({
   accent: string;
   onDemoOnly: (message: string) => void;
   onRequest: () => void;
+  showForm?: boolean;
 }) {
   const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
   return (
     <section className={`p-5 sm:p-8 ${darkSurface ? "text-white" : "text-slate-950"}`}>
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className={profile.cardClass + " min-w-0 p-5"}>
-          <DemoBookingForm site={site} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={onRequest} profile={profile} />
-        </div>
-        <div>
+      <div className={`grid min-w-0 gap-5 ${showForm ? "lg:grid-cols-[0.9fr_1.1fr]" : ""}`}>
+        {showForm ? (
+          <div className={profile.cardClass + " min-w-0 p-5"}>
+            <DemoBookingForm site={site} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={onRequest} profile={profile} />
+          </div>
+        ) : null}
+        <div className="min-w-0">
           <h3 className={`text-2xl font-semibold ${darkSurface ? "text-white" : "text-slate-950"}`}>Proof and trust</h3>
-          <div className="mt-5 grid gap-4">
+          <div className={`mt-5 grid min-w-0 gap-4 ${showForm ? "" : "md:grid-cols-2"}`}>
             {site.reviews.map((review) => <DemoTestimonial key={review.name} review={review} accent={accent} profile={profile} />)}
           </div>
         </div>
@@ -1161,7 +1164,7 @@ function DemoNavbar({
   profile: DemoDesignProfile;
 }) {
   const pages = Array.from(new Set(["Home", ...site.nav]));
-  const navFlowClass = profile.mood === "editorial" || profile.mood === "legal" ? "flex-nowrap overflow-x-auto" : "flex-wrap overflow-visible";
+  const navFlowClass = "flex-wrap overflow-visible";
   return (
     <header className={`backdrop-blur ${profile.navClass}`}>
       <div className={`flex min-w-0 gap-3 ${profile.mood === "editorial" || profile.mood === "legal" ? "flex-col items-center text-center" : "flex-col xl:flex-row xl:items-center xl:justify-between"}`}>
@@ -1692,7 +1695,7 @@ function DemoBookingForm({
           </div>
         ))}
       </div>
-      <div className="mt-5 grid gap-2 xl:grid-cols-2">
+      <div className="mt-5 grid gap-2">
         <button onClick={onDemoOnly.bind(null, "Demo-only form submitted. Production builds save this to CRM and internal workflows.")} className={`${profile.ctaClass} min-w-0 whitespace-normal text-center`} style={profile.mood === "velocity" || profile.mood === "cyber" ? undefined : { backgroundColor: dark }}>
           Preview submit
         </button>
@@ -1768,7 +1771,7 @@ function DemoGallery({
   return (
     <div className="p-5 sm:p-8">
       <h3 className={`${profile.mood === "editorial" ? "font-serif text-5xl" : "text-2xl font-semibold"} ${darkSurface ? "text-white" : "text-slate-950"}`}>{title}</h3>
-      <div className={`mt-5 grid min-w-0 gap-4 ${profile.mood === "editorial" ? "md:grid-cols-[1.2fr_.8fr_1fr]" : profile.mood === "outdoor" ? "md:grid-cols-3" : "md:grid-cols-3"}`}>
+      <div className={`mt-5 grid min-w-0 gap-4 ${profile.mood === "artisan" ? "" : profile.mood === "editorial" ? "md:grid-cols-[1.2fr_.8fr_1fr]" : profile.mood === "outdoor" ? "md:grid-cols-3" : "md:grid-cols-3"}`}>
         {items.map((item, index) => (
           <article key={item.name} className={`overflow-hidden ${profile.cardClass} ${profile.mood === "artisan" && index === 1 ? "rotate-2" : ""}`}>
             <div className={`relative overflow-hidden ${profile.mood === "editorial" ? "h-80" : profile.mood === "outdoor" ? "h-56" : "h-32"}`} style={{ background: `linear-gradient(135deg, ${index % 2 ? accent : dark}, ${item.imageTone || "#f8fafc"})` }}>
