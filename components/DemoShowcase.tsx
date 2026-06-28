@@ -272,7 +272,7 @@ function MiniWebsiteDemo({
 
   return (
     <div className={`relative p-3 sm:p-5 ${profile.shellClass}`}>
-      <div className={`overflow-hidden text-slate-950 shadow-2xl ${profile.frameClass}`}>
+      <div className={`min-w-0 overflow-hidden text-slate-950 shadow-2xl ${profile.frameClass}`}>
         <DemoNavbar
           site={site}
           activePage={activePage}
@@ -600,14 +600,14 @@ function DemoIdentityHero({
   if (profile.mood === "editorial") {
     return (
       <section className={`p-5 sm:p-10 ${profile.heroClass}`}>
-        <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+        <div className="grid min-w-0 gap-10 xl:grid-cols-[0.8fr_1.2fr] xl:items-end">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[#8B8B8B]">{activePage} / {profile.label}</p>
-            <h2 className={`mt-8 max-w-xl text-5xl leading-[0.95] sm:text-7xl ${profile.titleClass}`}>{pageContent.heroTitle}</h2>
+            <h2 className={`mt-8 max-w-xl text-5xl leading-none sm:text-7xl ${profile.titleClass}`}>{pageContent.heroTitle}</h2>
             <p className="mt-6 max-w-md text-sm leading-7 text-[#121212]/65">{pageContent.heroText}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">{primary}{secondary}</div>
           </div>
-          <div className="grid h-[520px] grid-cols-[0.8fr_1.2fr] gap-4">
+          <div className="grid h-[420px] grid-cols-[0.8fr_1.2fr] gap-4 sm:h-[520px]">
             <div className="self-end border border-[#121212]/10 bg-[#121212] p-3">
               <div className="h-72"><DemoVisual siteSlug={site.slug} item={site.items[1] || site.items[0]} accent={accent} /></div>
             </div>
@@ -877,7 +877,23 @@ function DemoIdentitySections({
             <p className="font-semibold text-[#334155]">Map preview</p>
             <div className="relative mt-4 h-[440px] overflow-hidden rounded-xl bg-[#dbeafe]">
               <div className="absolute inset-0 opacity-70" style={{ backgroundImage: "linear-gradient(90deg,rgba(51,65,85,.16)_1px,transparent_1px),linear-gradient(rgba(51,65,85,.16)_1px,transparent_1px)", backgroundSize: "42px 42px" }} />
-              {site.items.slice(0, 4).map((item, index) => <span key={item.name} className="absolute rounded-full bg-[#3B82F6] px-3 py-1 text-xs font-bold text-white shadow-lg" style={{ left: `${18 + index * 17}%`, top: `${22 + (index % 2) * 34}%` }}>{item.price}</span>)}
+              {site.items.slice(0, 4).map((item, index) => {
+                const positions = [
+                  { left: "20%", top: "22%" },
+                  { left: "58%", top: "22%" },
+                  { left: "38%", top: "56%" },
+                  { left: "76%", top: "56%" }
+                ];
+                return (
+                  <span
+                    key={item.name}
+                    className="absolute -translate-x-1/2 rounded-full bg-[#3B82F6] px-3 py-1 text-xs font-bold text-white shadow-lg"
+                    style={positions[index]}
+                  >
+                    {item.price}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -949,8 +965,8 @@ function DemoProofAndFlow({
   const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant";
   return (
     <section className={`p-5 sm:p-8 ${darkSurface ? "text-white" : "text-slate-950"}`}>
-      <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className={profile.cardClass + " p-5"}>
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className={profile.cardClass + " min-w-0 p-5"}>
           <DemoBookingForm site={site} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={onRequest} profile={profile} />
         </div>
         <div>
@@ -1145,24 +1161,25 @@ function DemoNavbar({
   profile: DemoDesignProfile;
 }) {
   const pages = Array.from(new Set(["Home", ...site.nav]));
+  const navFlowClass = profile.mood === "editorial" || profile.mood === "legal" ? "flex-nowrap overflow-x-auto" : "flex-wrap overflow-visible";
   return (
     <header className={`backdrop-blur ${profile.navClass}`}>
-      <div className={`flex gap-3 ${profile.mood === "editorial" || profile.mood === "legal" ? "flex-col items-center text-center" : "flex-col xl:flex-row xl:items-center xl:justify-between"}`}>
-        <div className="flex items-center justify-between gap-3">
-          <div className={`flex items-center gap-3 ${profile.mood === "editorial" ? "flex-col" : ""}`}>
+      <div className={`flex min-w-0 gap-3 ${profile.mood === "editorial" || profile.mood === "legal" ? "flex-col items-center text-center" : "flex-col xl:flex-row xl:items-center xl:justify-between"}`}>
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <div className={`flex min-w-0 items-center gap-3 ${profile.mood === "editorial" ? "flex-col" : ""}`}>
             <div className={`${profile.mood === "cyber" ? "rounded border border-[#22C55E]/40 bg-[#101722]" : profile.mood === "restaurant" ? "rounded-full bg-[#C0392B]" : "rounded-lg"} grid h-10 w-10 place-items-center text-white`} style={{ backgroundColor: profile.mood === "cyber" ? undefined : dark }}>
               <Package className="h-5 w-5" />
             </div>
-            <div>
-              <p className={`${profile.mood === "cyber" ? "font-mono uppercase text-[#22C55E]" : profile.mood === "legal" ? "font-serif text-[#C8A96B]" : "font-semibold"} ${profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant" ? "text-white" : "text-slate-950"}`}>{site.slug.split("-").map(capitalize).join(" ")}</p>
-              <p className={`text-xs ${profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant" ? "text-slate-300" : "text-slate-500"}`}>{site.brandLine}</p>
+            <div className="min-w-0">
+              <p className={`truncate ${profile.mood === "cyber" ? "font-mono uppercase text-[#22C55E]" : profile.mood === "legal" ? "font-serif text-[#C8A96B]" : "font-semibold"} ${profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant" ? "text-white" : "text-slate-950"}`}>{site.slug.split("-").map(capitalize).join(" ")}</p>
+              <p className={`truncate text-xs ${profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant" ? "text-slate-300" : "text-slate-500"}`}>{site.brandLine}</p>
             </div>
           </div>
           <button onClick={onCart} className="focus-ring rounded-lg border border-current/20 p-2 xl:hidden" aria-label="Open cart">
             <ShoppingCart className="h-5 w-5" />
           </button>
         </div>
-        <nav className={`flex overflow-x-auto pb-1 scrollbar-thin xl:pb-0 ${profile.mood === "restaurant" ? "gap-5" : profile.mood === "editorial" || profile.mood === "legal" ? "gap-6" : "gap-2"}`}>
+        <nav className={`flex min-w-0 max-w-full pb-1 scrollbar-thin xl:pb-0 ${navFlowClass} ${profile.mood === "restaurant" ? "gap-5" : profile.mood === "editorial" || profile.mood === "legal" ? "gap-6" : "gap-2"}`}>
           {pages.map((page) => (
             <button
               key={page}
@@ -1199,8 +1216,8 @@ function DemoPagePanel({
 }) {
   const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
   return (
-    <section className={`grid gap-0 border-b lg:grid-cols-[0.8fr_1.2fr] ${darkSurface ? "border-white/10 bg-transparent" : "border-slate-200 bg-white"}`}>
-      <div className={`border-b p-5 sm:p-8 lg:border-b-0 lg:border-r ${darkSurface ? "border-white/10" : "border-slate-200"}`}>
+    <section className={`grid min-w-0 gap-0 border-b xl:grid-cols-[0.8fr_1.2fr] ${darkSurface ? "border-white/10 bg-transparent" : "border-slate-200 bg-white"}`}>
+      <div className={`min-w-0 border-b p-5 sm:p-8 xl:border-b-0 xl:border-r ${darkSurface ? "border-white/10" : "border-slate-200"}`}>
         <p className="text-sm font-semibold uppercase tracking-[0.16em]" style={{ color: dark }}>{pageContent.label}</p>
         <h3 className={`mt-3 text-2xl font-semibold ${darkSurface ? "text-white" : "text-slate-950"}`}>{pageContent.title}</h3>
         <p className={`mt-3 text-sm leading-6 ${darkSurface ? "text-slate-300" : "text-slate-600"}`}>{pageContent.description}</p>
@@ -1217,14 +1234,14 @@ function DemoPagePanel({
           ))}
         </div>
       </div>
-      <div className="grid gap-4 p-5 sm:p-8 md:grid-cols-3">
+      <div className="grid min-w-0 gap-4 p-5 sm:p-8 md:grid-cols-2 xl:grid-cols-3">
         {pageContent.cards.map((card) => (
-          <article key={card.title} className={`${profile.cardClass} p-4`}>
+          <article key={card.title} className={`${profile.cardClass} min-w-0 p-4`}>
             <div className="mb-4 h-24 overflow-hidden rounded-lg" style={{ background: `linear-gradient(135deg, ${accent}, ${dark})` }}>
               <DemoVisual siteSlug={site.slug} item={{ name: card.title, imageTone: accent }} accent={accent} compact />
             </div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{card.meta}</p>
-            <h4 className={`mt-2 font-semibold ${darkSurface ? "text-white" : "text-slate-950"}`}>{card.title}</h4>
+            <h4 className={`mt-2 break-words font-semibold ${darkSurface ? "text-white" : "text-slate-950"}`}>{card.title}</h4>
             <p className={`mt-2 text-sm leading-6 ${darkSurface ? "text-slate-300" : "text-slate-600"}`}>{card.text}</p>
           </article>
         ))}
@@ -1389,9 +1406,9 @@ function DemoProductCard({
         {item.badge ? <span className="absolute left-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-900">{item.badge}</span> : null}
       </div>
       <div className={profile.mood === "editorial" ? "px-1 py-5" : "p-4"}>
-        <div className="flex items-start justify-between gap-3">
-          <h4 className={`${profile.mood === "restaurant" ? "font-serif text-xl" : profile.mood === "editorial" ? "font-serif text-2xl" : "font-semibold"} ${darkCard ? "text-white" : "text-slate-950"}`}>{item.name}</h4>
-          {item.price ? <p className="shrink-0 text-sm font-bold" style={{ color: dark }}>{item.price}</p> : null}
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <h4 className={`min-w-0 break-words ${profile.mood === "restaurant" ? "font-serif text-xl" : profile.mood === "editorial" ? "font-serif text-2xl" : "font-semibold"} ${darkCard ? "text-white" : "text-slate-950"}`}>{item.name}</h4>
+          {item.price ? <p className="shrink-0 whitespace-nowrap text-sm font-bold" style={{ color: dark }}>{item.price}</p> : null}
         </div>
         <p className={`mt-2 text-sm leading-6 ${darkCard ? "text-slate-300" : "text-slate-600"}`}>{item.description}</p>
         {item.meta ? <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.14em] ${darkCard ? "text-slate-400" : "text-slate-500"}`}>{item.meta}</p> : null}
@@ -1713,13 +1730,13 @@ function DemoSearchFilter({
 }) {
   const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
   return (
-    <div className={`w-full max-w-2xl p-3 ${profile.mood === "editorial" ? "border-y border-[#121212]/15 bg-transparent" : darkSurface ? "rounded border border-white/10 bg-white/8" : "rounded-lg border border-slate-200 bg-white"}`}>
-      <div className={`flex items-center gap-2 border-b pb-3 ${darkSurface ? "border-white/10" : "border-slate-200"}`}>
+      <div className={`min-w-0 max-w-full p-3 ${profile.mood === "editorial" ? "border-y border-[#121212]/15 bg-transparent" : darkSurface ? "rounded border border-white/10 bg-white/8" : "rounded-lg border border-slate-200 bg-white"}`}>
+      <div className={`flex min-w-0 items-center gap-2 border-b pb-3 ${darkSurface ? "border-white/10" : "border-slate-200"}`}>
         <Search className={`h-4 w-4 ${darkSurface ? "text-slate-400" : "text-slate-500"}`} />
-        <span className={`text-sm ${darkSurface ? "text-slate-300" : "text-slate-500"}`}>Search, filter, or browse mock records</span>
+        <span className={`min-w-0 truncate text-sm ${darkSurface ? "text-slate-300" : "text-slate-500"}`}>Search, filter, or browse mock records</span>
         <Filter className={`ml-auto h-4 w-4 ${darkSurface ? "text-slate-400" : "text-slate-500"}`} />
       </div>
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+      <div className="mt-3 flex min-w-0 max-w-full gap-2 overflow-x-auto pb-1 scrollbar-thin">
         {categories.map((category) => (
           <button key={category} onClick={() => onFilter(category)} className={`shrink-0 px-3 py-1 text-xs font-semibold ${profile.mood === "editorial" ? "border-b border-[#121212]/20 text-[#121212]" : darkSurface ? "rounded border border-white/10 text-slate-200 hover:bg-white/10" : "rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
             {category}
@@ -1750,7 +1767,7 @@ function DemoGallery({
   return (
     <div className="p-5 sm:p-8">
       <h3 className={`${profile.mood === "editorial" ? "font-serif text-5xl" : "text-2xl font-semibold"} ${darkSurface ? "text-white" : "text-slate-950"}`}>{title}</h3>
-      <div className={`mt-5 grid gap-4 ${profile.mood === "editorial" ? "sm:grid-cols-[1.2fr_.8fr_1fr]" : profile.mood === "outdoor" ? "sm:grid-cols-3" : "sm:grid-cols-3"}`}>
+      <div className={`mt-5 grid min-w-0 gap-4 ${profile.mood === "editorial" ? "md:grid-cols-[1.2fr_.8fr_1fr]" : profile.mood === "outdoor" ? "md:grid-cols-3" : "md:grid-cols-3"}`}>
         {items.map((item, index) => (
           <article key={item.name} className={`overflow-hidden ${profile.cardClass} ${profile.mood === "artisan" && index === 1 ? "rotate-2" : ""}`}>
             <div className={`relative overflow-hidden ${profile.mood === "editorial" ? "h-80" : profile.mood === "outdoor" ? "h-56" : "h-32"}`} style={{ background: `linear-gradient(135deg, ${index % 2 ? accent : dark}, ${item.imageTone || "#f8fafc"})` }}>
