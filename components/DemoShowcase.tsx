@@ -1005,7 +1005,7 @@ function DemoSubpageSpotlight({
   if (profile.mood === "restaurant") {
     return (
       <section className="border-b-4 border-[#5C4033] bg-[#F8F4EC] p-5 sm:p-8">
-        <div className="grid gap-5 lg:grid-cols-[0.7fr_1.3fr]">
+        <div className="grid gap-5 min-[1400px]:grid-cols-[0.7fr_1.3fr]">
           <div className="rounded-md bg-[#2b211b] p-5 text-[#F8F4EC] shadow-[8px_8px_0_rgba(92,64,51,.18)]">
             <p className="font-serif text-2xl text-[#E0A106]">{activePage} tickets</p>
             <p className="mt-3 text-sm leading-6 text-[#F8F4EC]/75">{pageContent.description}</p>
@@ -1027,7 +1027,7 @@ function DemoSubpageSpotlight({
   if (profile.mood === "medical" || profile.mood === "wellness") {
     return (
       <section className={`border-b p-5 sm:p-8 ${profile.mood === "medical" ? "border-[#CBD5E1] bg-[#F8FBFF]" : "border-[#A8C3B0]/35 bg-white"}`}>
-        <div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
+        <div className="grid gap-5 min-[1400px]:grid-cols-[1fr_1.2fr]">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: dark }}>{activePage} center</p>
             <h3 className={`mt-3 ${profile.mood === "wellness" ? "font-serif" : ""} text-3xl font-semibold text-[#243447]`}>{pageContent.title}</h3>
@@ -1070,7 +1070,7 @@ function DemoSubpageSpotlight({
   if (profile.mood === "realty") {
     return (
       <section className="border-b border-[#CBD5E1] bg-white p-5 sm:p-8">
-        <div className="grid gap-4 lg:grid-cols-[0.7fr_1.3fr]">
+        <div className="grid gap-4 min-[1400px]:grid-cols-[0.7fr_1.3fr]">
           <div>
             <h3 className="text-3xl font-semibold text-[#0F172A]">{pageContent.title}</h3>
             <p className="mt-3 text-sm leading-6 text-[#475569]">{pageContent.description}</p>
@@ -1095,7 +1095,7 @@ function DemoSubpageSpotlight({
   if (profile.mood === "outdoor") {
     return (
       <section className="border-b border-[#2F5D50]/20 bg-[#F7F4ED] p-5 sm:p-8">
-        <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid gap-5 min-[1400px]:grid-cols-[1.1fr_0.9fr]">
           <div className="grid gap-3 md:grid-cols-3">
             {pageItems.map((item, index) => (
               <article key={item.title} className="rounded-[24px] border border-[#2F5D50]/20 bg-white/80 p-4 shadow-sm">
@@ -1119,7 +1119,7 @@ function DemoSubpageSpotlight({
   const darkSurface = profile.mood === "velocity" || profile.mood === "cyber";
   return (
     <section className={`border-b p-5 sm:p-8 ${darkSurface ? "border-white/10 bg-white/[0.03] text-white" : "border-slate-200 bg-white text-slate-950"}`}>
-      <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
+      <div className="grid gap-5 min-[1400px]:grid-cols-[0.8fr_1.2fr]">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: accent }}>{profile.label}</p>
           <h3 className="mt-3 text-3xl font-semibold">{pageContent.title}</h3>
