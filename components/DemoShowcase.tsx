@@ -805,7 +805,7 @@ function DemoIdentitySections({
             ))}
           </div>
         </section>
-        <section className="grid min-w-0 gap-0 border-b border-[#121212]/10 lg:grid-cols-[1fr_1fr]">
+        <section className="grid min-w-0 gap-0 border-b border-[#121212]/10 min-[1400px]:grid-cols-[1fr_1fr]">
           <DemoGallery title="Lookbook frames" items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
           <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest("Premium Commerce Workflow")} />
         </section>
@@ -911,7 +911,7 @@ function DemoIdentitySections({
             {site.items.map((item, index) => <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />)}
           </div>
         </section>
-        <section className="grid gap-0 border-b border-[#2F5D50]/20 lg:grid-cols-[1.2fr_0.8fr]">
+        <section className="grid gap-0 border-b border-[#2F5D50]/20 min-[1400px]:grid-cols-[1.2fr_0.8fr]">
           <DemoGallery title="Before / after transformations" items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
           <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest("Outdoor Services Quote Flow")} />
         </section>
@@ -937,7 +937,7 @@ function DemoIdentitySections({
           <DemoBookingForm site={site} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest("Production Workflow Build")} profile={profile} />
         </div>
       </section>
-      <section className={`grid min-w-0 gap-0 border-b ${profile.mood === "legal" ? "border-[#C8A96B]/25 lg:grid-cols-[0.8fr_1.2fr]" : "border-[#CBD5E1] lg:grid-cols-[1fr_1fr]"}`}>
+      <section className={`grid min-w-0 gap-0 border-b ${profile.mood === "legal" ? "border-[#C8A96B]/25 min-[1400px]:grid-cols-[0.8fr_1.2fr]" : "border-[#CBD5E1] min-[1400px]:grid-cols-[1fr_1fr]"}`}>
         <DemoGallery title={site.galleryTitle} items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
         <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest(demo.recommendedPackage)} showForm={false} />
       </section>
@@ -966,7 +966,7 @@ function DemoProofAndFlow({
   const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
   return (
     <section className={`p-5 sm:p-8 ${darkSurface ? "text-white" : "text-slate-950"}`}>
-      <div className={`grid min-w-0 gap-5 ${showForm ? "lg:grid-cols-[0.9fr_1.1fr]" : ""}`}>
+      <div className={`grid min-w-0 gap-5 ${showForm ? "min-[1400px]:grid-cols-[0.9fr_1.1fr]" : ""}`}>
         {showForm ? (
           <div className={profile.cardClass + " min-w-0 p-5"}>
             <DemoBookingForm site={site} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={onRequest} profile={profile} />
