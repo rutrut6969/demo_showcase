@@ -768,8 +768,8 @@ function DemoIdentitySections({
     return (
       <>
         <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
-        <section className="grid gap-6 border-b border-[#D9B8A1]/70 p-5 sm:p-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.65fr)]">
-          <div>
+        <section className="grid min-w-0 gap-6 border-b border-[#D9B8A1]/70 p-5 sm:p-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.65fr)]">
+          <div className="min-w-0">
             <p className="font-serif text-2xl text-[#6B4F43]">Meet the maker</p>
             <div className="mt-5 grid min-w-0 gap-5 md:grid-cols-2">
               {site.items.map((item, index) => (
@@ -777,7 +777,7 @@ function DemoIdentitySections({
               ))}
             </div>
           </div>
-          <div className="space-y-5">
+          <div className="min-w-0 space-y-5">
             <DemoPagePanel pageContent={pageContent} site={site} dark={dark} accent={accent} onDemoOnly={onDemoOnly} profile={profile} />
             <DemoGallery title="Customer creation gallery" items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
           </div>
@@ -792,7 +792,7 @@ function DemoIdentitySections({
     return (
       <>
         <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
-        <section className="border-b border-[#121212]/10 p-5 sm:p-10">
+        <section className="min-w-0 border-b border-[#121212]/10 p-5 sm:p-10">
           <div className="flex items-end justify-between gap-6">
             <div>
               <p className="text-xs uppercase tracking-[0.34em] text-[#8B8B8B]">{profile.sectionTitle}</p>
@@ -800,13 +800,13 @@ function DemoIdentitySections({
             </div>
             <DemoSearchFilter categories={site.categories} dark={dark} onFilter={(category) => onDemoOnly(`${category} editorial filter applied.`)} profile={profile} />
           </div>
-          <div className="mt-10 grid gap-8 md:grid-cols-[1.2fr_0.8fr_1fr]">
+          <div className="mt-10 grid min-w-0 gap-8 md:grid-cols-[1.2fr_0.8fr_1fr]">
             {site.items.slice(0, 3).map((item, index) => (
               <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />
             ))}
           </div>
         </section>
-        <section className="grid gap-0 border-b border-[#121212]/10 lg:grid-cols-[1fr_1fr]">
+        <section className="grid min-w-0 gap-0 border-b border-[#121212]/10 lg:grid-cols-[1fr_1fr]">
           <DemoGallery title="Lookbook frames" items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
           <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest("Premium Commerce Workflow")} />
         </section>
@@ -842,7 +842,7 @@ function DemoIdentitySections({
     return (
       <>
         <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
-        <section className="grid gap-0 border-b-4 border-[#5C4033] lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="grid min-w-0 gap-0 border-b-4 border-[#5C4033] lg:grid-cols-[0.9fr_1.1fr]">
           <div className="bg-[#2b211b] p-5 text-[#F8F4EC] sm:p-8">
             <p className="font-serif text-3xl text-[#E0A106]">Menu board</p>
             <div className="mt-6 space-y-4">
@@ -866,14 +866,14 @@ function DemoIdentitySections({
     return (
       <>
         <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
-        <section className="grid gap-5 border-b border-[#CBD5E1] p-5 sm:p-8 xl:grid-cols-[1.25fr_0.75fr]">
-          <div>
+        <section className="grid min-w-0 gap-5 border-b border-[#CBD5E1] p-5 sm:p-8 xl:grid-cols-[1.25fr_0.75fr]">
+          <div className="min-w-0">
             <DemoSearchFilter categories={site.categories} dark={dark} onFilter={(category) => onDemoOnly(`${category} property filter applied.`)} profile={profile} />
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div className="mt-5 grid min-w-0 gap-4 md:grid-cols-2">
               {site.items.map((item, index) => <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />)}
             </div>
           </div>
-          <div className="min-h-[520px] rounded-2xl border border-[#CBD5E1] bg-[#E8DCCF] p-4">
+          <div className="min-w-0 rounded-2xl border border-[#CBD5E1] bg-[#E8DCCF] p-4 sm:min-h-[520px]">
             <p className="font-semibold text-[#334155]">Map preview</p>
             <div className="relative mt-4 h-[440px] overflow-hidden rounded-xl bg-[#dbeafe]">
               <div className="absolute inset-0 opacity-70" style={{ backgroundImage: "linear-gradient(90deg,rgba(51,65,85,.16)_1px,transparent_1px),linear-gradient(rgba(51,65,85,.16)_1px,transparent_1px)", backgroundSize: "42px 42px" }} />
@@ -924,21 +924,21 @@ function DemoIdentitySections({
   return (
     <>
       <DemoSubpageSpotlight site={site} activePage={activePage} pageContent={pageContent} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} />
-      <section className={`grid gap-5 border-b p-5 sm:p-8 ${profile.mood === "legal" ? "border-[#C8A96B]/25 xl:grid-cols-[0.9fr_1.1fr]" : "border-[#CBD5E1] xl:grid-cols-[1.1fr_0.9fr]"}`}>
-        <div>
+      <section className={`grid min-w-0 gap-5 border-b p-5 sm:p-8 ${profile.mood === "legal" ? "border-[#C8A96B]/25 xl:grid-cols-[0.9fr_1.1fr]" : "border-[#CBD5E1] xl:grid-cols-[1.1fr_0.9fr]"}`}>
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: accent }}>{profile.sectionTitle}</p>
           <h3 className={`mt-3 text-3xl font-semibold ${headingColor}`}>{site.itemsTitle}</h3>
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div className="mt-5 grid min-w-0 gap-4 md:grid-cols-2">
             {site.items.map((item, index) => <DemoProductCard key={item.name} item={item} siteSlug={site.slug} dark={dark} accent={accent} onAdd={onCart} profile={profile} stagger={index} />)}
           </div>
         </div>
-        <div className={profile.cardClass + " p-5"}>
+        <div className={profile.cardClass + " min-w-0 p-5"}>
           <h3 className={`text-2xl font-semibold ${headingColor}`}>{pageContent.title}</h3>
           <p className={`mt-3 text-sm leading-6 ${mutedColor}`}>{pageContent.description}</p>
           <DemoBookingForm site={site} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest("Production Workflow Build")} profile={profile} />
         </div>
       </section>
-      <section className={`grid gap-0 border-b ${profile.mood === "legal" ? "border-[#C8A96B]/25 lg:grid-cols-[0.8fr_1.2fr]" : "border-[#CBD5E1] lg:grid-cols-[1fr_1fr]"}`}>
+      <section className={`grid min-w-0 gap-0 border-b ${profile.mood === "legal" ? "border-[#C8A96B]/25 lg:grid-cols-[0.8fr_1.2fr]" : "border-[#CBD5E1] lg:grid-cols-[1fr_1fr]"}`}>
         <DemoGallery title={site.galleryTitle} items={site.gallery} dark={dark} accent={accent} profile={profile} siteSlug={site.slug} />
         <DemoProofAndFlow site={site} profile={profile} dark={dark} accent={accent} onDemoOnly={onDemoOnly} onRequest={() => onRequest(demo.recommendedPackage)} />
       </section>
@@ -962,7 +962,7 @@ function DemoProofAndFlow({
   onDemoOnly: (message: string) => void;
   onRequest: () => void;
 }) {
-  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant";
+  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
   return (
     <section className={`p-5 sm:p-8 ${darkSurface ? "text-white" : "text-slate-950"}`}>
       <div className="grid min-w-0 gap-5 lg:grid-cols-[0.9fr_1.1fr]">
@@ -1397,7 +1397,7 @@ function DemoProductCard({
       : profile.ctaClass + " mt-4 w-full";
   return (
     <article
-      className={`group overflow-hidden transition duration-300 ${profile.cardClass} ${
+      className={`group min-w-0 overflow-hidden transition duration-300 ${profile.cardClass} ${
         profile.mood === "artisan" ? (stagger % 2 ? "rotate-1 hover:rotate-0" : "-rotate-1 hover:rotate-0") : ""
       } ${profile.mood === "velocity" ? "hover:scale-[1.025]" : "hover:-translate-y-1"}`}
     >
@@ -1665,9 +1665,9 @@ function DemoBookingForm({
   onRequest: () => void;
   profile?: DemoDesignProfile;
 }) {
-  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant";
+  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
   return (
-    <div>
+    <div className="min-w-0">
       <h3 className={`text-2xl font-semibold ${darkSurface ? "text-white" : "text-slate-950"}`}>{site.flowTitle}</h3>
       <p className={`mt-2 text-sm leading-6 ${darkSurface ? "text-slate-300" : "text-slate-600"}`}>{site.flowDescription}</p>
       <div className="mt-5 grid gap-3">
@@ -1676,10 +1676,10 @@ function DemoBookingForm({
             <span className={`text-xs font-semibold uppercase tracking-[0.14em] ${darkSurface ? "text-slate-400" : "text-slate-500"}`}>{field}</span>
             <button
               onClick={() => onDemoOnly(`${field} selector opened for demo only.`)}
-              className={`mt-2 flex w-full items-center justify-between px-3 py-3 text-left text-sm font-semibold ${darkSurface ? "rounded border border-white/10 bg-white/8 text-slate-100" : "rounded-lg border border-slate-200 bg-white text-slate-800"}`}
+              className={`mt-2 flex w-full min-w-0 items-center justify-between gap-3 px-3 py-3 text-left text-sm font-semibold ${darkSurface ? "rounded border border-white/10 bg-white/8 text-slate-100" : "rounded-lg border border-slate-200 bg-white text-slate-800"}`}
             >
-              {index === 0 ? site.categories[0] : "Choose option"}
-              <ChevronRight className="h-4 w-4" />
+              <span className="min-w-0 truncate">{index === 0 ? site.categories[0] : "Choose option"}</span>
+              <ChevronRight className="h-4 w-4 shrink-0" />
             </button>
           </label>
         ))}
@@ -1692,11 +1692,11 @@ function DemoBookingForm({
           </div>
         ))}
       </div>
-      <div className="mt-5 grid gap-2 sm:grid-cols-2">
-        <button onClick={onDemoOnly.bind(null, "Demo-only form submitted. Production builds save this to CRM and internal workflows.")} className={profile.ctaClass} style={profile.mood === "velocity" || profile.mood === "cyber" ? undefined : { backgroundColor: dark }}>
+      <div className="mt-5 grid gap-2 xl:grid-cols-2">
+        <button onClick={onDemoOnly.bind(null, "Demo-only form submitted. Production builds save this to CRM and internal workflows.")} className={`${profile.ctaClass} min-w-0 whitespace-normal text-center`} style={profile.mood === "velocity" || profile.mood === "cyber" ? undefined : { backgroundColor: dark }}>
           Preview submit
         </button>
-        <button onClick={onRequest} className={`px-4 py-3 text-sm font-semibold ${darkSurface ? "rounded border border-white/20 text-white hover:bg-white/10" : "rounded-lg border border-slate-300 bg-white text-slate-900 hover:bg-slate-50"}`}>
+        <button onClick={onRequest} className={`min-w-0 px-4 py-3 text-center text-sm font-semibold ${darkSurface ? "rounded border border-white/20 text-white hover:bg-white/10" : "rounded-lg border border-slate-300 bg-white text-slate-900 hover:bg-slate-50"}`}>
           Build this flow
         </button>
       </div>
@@ -1729,6 +1729,7 @@ function DemoSearchFilter({
   profile?: DemoDesignProfile;
 }) {
   const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
+  const filterFlowClass = profile.mood === "editorial" || darkSurface ? "flex-nowrap overflow-x-auto" : "flex-wrap overflow-visible";
   return (
       <div className={`min-w-0 max-w-full p-3 ${profile.mood === "editorial" ? "border-y border-[#121212]/15 bg-transparent" : darkSurface ? "rounded border border-white/10 bg-white/8" : "rounded-lg border border-slate-200 bg-white"}`}>
       <div className={`flex min-w-0 items-center gap-2 border-b pb-3 ${darkSurface ? "border-white/10" : "border-slate-200"}`}>
@@ -1736,7 +1737,7 @@ function DemoSearchFilter({
         <span className={`min-w-0 truncate text-sm ${darkSurface ? "text-slate-300" : "text-slate-500"}`}>Search, filter, or browse mock records</span>
         <Filter className={`ml-auto h-4 w-4 ${darkSurface ? "text-slate-400" : "text-slate-500"}`} />
       </div>
-      <div className="mt-3 flex min-w-0 max-w-full gap-2 overflow-x-auto pb-1 scrollbar-thin">
+      <div className={`mt-3 flex min-w-0 max-w-full gap-2 pb-1 scrollbar-thin ${filterFlowClass}`}>
         {categories.map((category) => (
           <button key={category} onClick={() => onFilter(category)} className={`shrink-0 px-3 py-1 text-xs font-semibold ${profile.mood === "editorial" ? "border-b border-[#121212]/20 text-[#121212]" : darkSurface ? "rounded border border-white/10 text-slate-200 hover:bg-white/10" : "rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
             {category}
@@ -1786,7 +1787,7 @@ function DemoGallery({
 }
 
 function DemoTestimonial({ review, accent, profile = demoDesignProfiles["crafted-commerce"] }: { review: { name: string; quote: string; detail: string }; accent: string; profile?: DemoDesignProfile }) {
-  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal" || profile.mood === "restaurant";
+  const darkSurface = profile.mood === "velocity" || profile.mood === "cyber" || profile.mood === "legal";
   return (
     <blockquote className={`${profile.cardClass} p-5`}>
       <div className="flex gap-1">
