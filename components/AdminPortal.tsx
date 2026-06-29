@@ -239,9 +239,15 @@ function CrmPanel({ data }: { data: AdminPortalData }) {
     try {
       const response = await fetch(`/api/admin/clients/${clientId}`, {
         method,
+        credentials: "include",
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
+      if (response.status === 401) {
+        window.location.href = "/admin/login?error=session";
+        return;
+      }
       if (!response.ok) throw new Error((await response.json().catch(() => null))?.error || "Client action failed");
       setStatus("Client updated. Refreshing admin data...");
       window.location.reload();
@@ -301,9 +307,15 @@ function InvoicesPanel({ data }: { data: AdminPortalData }) {
     try {
       const response = await fetch(`/api/admin/invoices/${invoiceId}/action`, {
         method: "POST",
+        credentials: "include",
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, note: `Admin selected ${action.replaceAll("_", " ")} from invoice panel.` })
       });
+      if (response.status === 401) {
+        window.location.href = "/admin/login?error=session";
+        return;
+      }
       if (!response.ok) throw new Error((await response.json().catch(() => null))?.error || "Invoice action failed");
       setStatus("Invoice action saved. Refreshing admin data...");
       window.location.reload();
@@ -474,6 +486,8 @@ function PricingPromotionsPanel({ data }: { data: AdminPortalData }) {
     try {
       const response = await fetch("/api/admin/pricing", {
         method: "PATCH",
+        credentials: "include",
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           key: pricingKey,
@@ -513,6 +527,8 @@ function PricingPromotionsPanel({ data }: { data: AdminPortalData }) {
       };
       const response = await fetch("/api/admin/promotions", {
         method: promotionId ? "PATCH" : "POST",
+        credentials: "include",
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });

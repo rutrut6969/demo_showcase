@@ -11,7 +11,7 @@ export default async function AdminLoginPage({ searchParams }: { searchParams?: 
 
   return (
     <main className="grid min-h-screen place-items-center bg-obsidian-950 px-4">
-      <AdminLoginForm initialError={searchParams?.error === "invalid" ? "Invalid email or password." : undefined} />
+      <AdminLoginForm initialError={searchParams?.error === "invalid" ? "Invalid email or password." : searchParams?.error === "session" ? "Your admin session was not available to that action. Please sign in again." : undefined} />
     </main>
   );
 }
