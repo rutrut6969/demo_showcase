@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { demoTemplates, retainerTiers } from "@/lib/data";
 import { getSquareConfig } from "@/lib/square";
+import { defaultPricingRules, formatCents } from "@/lib/pricing-config";
 
 function money(cents: number | null | undefined) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format((cents || 0) / 100);
@@ -26,6 +27,8 @@ export async function getAdminPortalData() {
     clients: [] as Array<Record<string, string>>,
     invoices: [] as Array<Record<string, string>>,
     payments: [] as Array<Record<string, string>>,
+    pricingRules: defaultPricingRules.map((rule) => ({ key: rule.key, label: rule.label, basePrice: formatCents(rule.basePrice), minPrice: formatCents(rule.minPrice), retainer: rule.retainerMin ? `${formatCents(rule.retainerMin)}/month` : "Custom", active: "Yes" })),
+    promotions: [] as Array<Record<string, string>>,
     projects: [] as Array<Record<string, string>>,
     retainers: retainerTiers.map((tier) => ({ name: tier.name, price: tier.price, status: "Configured plan", client: "Template", renewal: "N/A" })),
     demos: demoTemplates.map((demo) => ({ slug: demo.slug, name: demo.name, category: demo.type, visible: "Yes", package: demo.recommendedPackage, complexity: label(demo.complexity) })),
@@ -43,6 +46,8 @@ export async function getAdminPortalData() {
       clients,
       invoices,
       payments,
+      pricingRules,
+      promotions,
       projects,
       retainers,
       demos,
@@ -60,6 +65,8 @@ export async function getAdminPortalData() {
       prisma.client.findMany({ take: 50, orderBy: { createdAt: "desc" }, include: { projectRequests: true, invoices: true, projects: true } }),
       prisma.invoice.findMany({ take: 50, orderBy: { createdAt: "desc" }, include: { client: true, request: true, payments: true } }),
       prisma.paymentRecord.findMany({ take: 50, orderBy: { createdAt: "desc" }, include: { invoice: { include: { client: true, request: true } } } }),
+      prisma.pricingRule.findMany({ take: 50, orderBy: { sortOrder: "asc" } }),
+      prisma.promotion.findMany({ take: 50, orderBy: { createdAt: "desc" } }),
       prisma.project.findMany({ take: 50, orderBy: { updatedAt: "desc" }, include: { client: true } }),
       prisma.retainer.findMany({ take: 50, orderBy: { updatedAt: "desc" }, include: { client: true, project: true } }),
       prisma.demoTemplate.findMany({ take: 100, orderBy: { name: "asc" } }),
@@ -127,6 +134,26 @@ export async function getAdminPortalData() {
         amount: money(payment.amount),
         method: payment.paymentMethod || "Square",
         squarePaymentId: payment.squarePaymentId || "-"
+      })),
+      pricingRules: pricingRules.length
+        ? pricingRules.map((rule) => ({
+            key: rule.key,
+            label: rule.label,
+            basePrice: formatCents(rule.basePrice),
+            minPrice: formatCents(rule.minPrice),
+            retainer: rule.retainerMin ? `${formatCents(rule.retainerMin)}${rule.retainerMax && rule.retainerMax !== rule.retainerMin ? `-${formatCents(rule.retainerMax)}` : ""}/month` : "Custom",
+            active: rule.active ? "Yes" : "No"
+          }))
+        : empty.pricingRules,
+      promotions: promotions.map((promotion) => ({
+        id: promotion.id,
+        name: promotion.name,
+        active: promotion.active ? "Yes" : "No",
+        normalPrice: formatCents(promotion.normalPrice),
+        promoPrice: formatCents(promotion.promoPrice),
+        retainer: promotion.promoRetainer ? `${formatCents(promotion.promoRetainer)}/month` : "None",
+        slots: promotion.maxUses ? `${Math.max(0, promotion.maxUses - promotion.currentUses)} / ${promotion.maxUses}` : "Unlimited",
+        dates: `${promotion.startDate?.toLocaleDateString() || "Now"} - ${promotion.endDate?.toLocaleDateString() || "No end"}`
       })),
       projects: projects.map((project) => ({
         id: project.id,

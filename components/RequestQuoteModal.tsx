@@ -20,6 +20,14 @@ type QuoteResult = {
   quote?: {
     buildCostMin: number;
     buildCostMax: number;
+    normalPrice?: number;
+    promotionalPrice?: number | null;
+    selectedBuildPrice?: number;
+    normalRetainer?: number | null;
+    promotionalRetainer?: number | null;
+    selectedRetainer?: number | null;
+    promotionId?: string | null;
+    pricingExplanation?: string;
     timeframe: string;
     complexityLevel: string;
     recommendedPackage: string;
@@ -60,6 +68,7 @@ export function RequestQuoteModal({
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewReason, setReviewReason] = useState("");
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
+  const [includeRetainer, setIncludeRetainer] = useState(false);
   const selectedDemo = metadata.selectedDemo || "Custom platform";
 
   const featureSummary = useMemo(() => features.join(", "), [features]);
@@ -127,6 +136,13 @@ export function RequestQuoteModal({
         quote: {
           buildCostMin: 250000,
           buildCostMax: 650000,
+          normalPrice: 250000,
+          promotionalPrice: null,
+          selectedBuildPrice: 250000,
+          normalRetainer: 20000,
+          promotionalRetainer: null,
+          selectedRetainer: 20000,
+          pricingExplanation: "This local fallback uses safe configured pricing. The optional Essential Retainer is shown separately and is not automatically included.",
           timeframe: "3-6 weeks",
           complexityLevel: "MODERATE",
           recommendedPackage: metadata.recommendedPackage || "Custom Platform Build",
@@ -156,6 +172,7 @@ export function RequestQuoteModal({
         body: JSON.stringify({
           requestId: result.requestId,
           selectedDemo: metadata.selectedDemo,
+          includeRetainer,
           quote: result.quote
         })
       });
@@ -286,13 +303,28 @@ export function RequestQuoteModal({
                     <p className="font-semibold">Preliminary estimate ready</p>
                   </div>
                   <p className="mt-3 text-2xl font-semibold text-white">
-                    {formatCurrency(result.quote.buildCostMin)}-{formatCurrency(result.quote.buildCostMax)}
+                    {formatCurrency(result.quote.selectedBuildPrice || result.quote.buildCostMin)}
                   </p>
-                  <p className="mt-1 text-sm text-slate-300">{result.quote.timeframe}</p>
+                  <p className="mt-1 text-sm text-slate-300">One-time project build - {result.quote.timeframe}</p>
                 </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Info label="Normal price" value={formatCurrency(result.quote.normalPrice || result.quote.buildCostMin)} />
+                  <Info label="Promotional price" value={result.quote.promotionalPrice ? formatCurrency(result.quote.promotionalPrice) : "No active promotion"} />
+                </div>
+                {result.quote.pricingExplanation ? <p className="rounded-lg border border-obsidian-green/25 bg-obsidian-green/10 p-4 text-sm leading-6 text-emerald-100">{result.quote.pricingExplanation}</p> : null}
                 <Info label="Complexity" value={result.quote.complexityLevel.replace("_", " ")} />
                 <Info label="Recommended package" value={result.quote.recommendedPackage} />
-                <Info label="Suggested retainer" value={result.quote.suggestedRetainerTier} />
+                <div className="rounded-lg border border-white/15 bg-slate-900/90 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Optional monthly services</p>
+                  <p className="mt-2 font-semibold text-white">{result.quote.suggestedRetainerTier}</p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {result.quote.selectedRetainer ? `${formatCurrency(result.quote.selectedRetainer)}/month` : "Custom monthly pricing after review"}
+                  </p>
+                  <label className="mt-3 flex items-start gap-3 text-sm text-slate-200">
+                    <input type="checkbox" checked={includeRetainer} onChange={(event) => setIncludeRetainer(event.target.checked)} className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-900 accent-obsidian-green" />
+                    Add this optional retainer to checkout
+                  </label>
+                </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Suggested add-ons</p>
                   <div className="mt-2 flex flex-wrap gap-2">

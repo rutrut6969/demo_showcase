@@ -72,6 +72,13 @@ export async function POST(request: Request) {
           create: {
             buildCostMin: quote.buildCostMin,
             buildCostMax: quote.buildCostMax,
+            normalPrice: quote.normalPrice,
+            promotionalPrice: quote.promotionalPrice,
+            selectedBuildPrice: quote.selectedBuildPrice,
+            normalRetainer: quote.normalRetainer,
+            promotionalRetainer: quote.promotionalRetainer,
+            selectedRetainer: quote.selectedRetainer,
+            promotionId: quote.promotionId,
             timeframe: quote.timeframe,
             complexityLevel: quote.complexityLevel,
             recommendedPackage: quote.recommendedPackage,

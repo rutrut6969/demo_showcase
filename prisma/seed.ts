@@ -2,6 +2,7 @@ import { PrismaClient, RoleName } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import { demoTemplates, retainerTiers } from "../lib/data";
+import { defaultPricingRules } from "../lib/pricing-config";
 
 const prisma = new PrismaClient();
 
@@ -120,6 +121,39 @@ async function main() {
       value: JSON.stringify(retainerTiers),
       enabled: true,
       metadata: { source: "seed" }
+    }
+  });
+
+  for (const rule of defaultPricingRules) {
+    await prisma.pricingRule.upsert({
+      where: { key: rule.key },
+      update: rule,
+      create: rule
+    });
+  }
+
+  await prisma.promotion.upsert({
+    where: { id: "seed-launch-promo" },
+    update: {
+      name: "$500 Website Launch Promotion",
+      description: "Optional launch promo: first 10 qualifying clients receive a $500 build and $100/month Essential Retainer offer.",
+      active: false,
+      normalPrice: 100000,
+      promoPrice: 50000,
+      normalRetainer: 20000,
+      promoRetainer: 10000,
+      maxUses: 10
+    },
+    create: {
+      id: "seed-launch-promo",
+      name: "$500 Website Launch Promotion",
+      description: "Optional launch promo: first 10 qualifying clients receive a $500 build and $100/month Essential Retainer offer.",
+      active: false,
+      normalPrice: 100000,
+      promoPrice: 50000,
+      normalRetainer: 20000,
+      promoRetainer: 10000,
+      maxUses: 10
     }
   });
 }

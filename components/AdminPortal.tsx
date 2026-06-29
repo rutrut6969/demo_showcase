@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Download, GripVertical, Menu, Plus, Shield, X } from "lucide-react";
 import type { RoleName } from "@prisma/client";
@@ -153,6 +153,7 @@ function ModuleContent({ slug, role, roleCapabilities, data }: { slug: string; r
   if (slug === "feature-toggles") return <FeatureTogglesPanel data={data} />;
   if (slug === "retainers") return <RetainersPanel data={data} />;
   if (slug === "analytics") return <AnalyticsPanel data={data} />;
+  if (slug === "pricing") return <PricingPromotionsPanel data={data} />;
   if (slug === "users") return <UsersPanel data={data} />;
   if (slug === "logs" || slug === "audit") return <LogsPanel data={data} />;
   return <GenericModule slug={slug} />;
@@ -347,6 +348,152 @@ function FeatureTogglesPanel({ data }: { data: AdminPortalData }) {
 function AnalyticsPanel({ data }: { data: AdminPortalData }) {
   return (
     <ResponsiveTable title="Recent analytics events" headers={["Event", "Demo", "Source", "Visitor", "Created"]} rows={data.analytics.map((event) => [event.event, event.demo, event.source, event.visitor, event.created])} />
+  );
+}
+
+function PricingPromotionsPanel({ data }: { data: AdminPortalData }) {
+  const [pricingKey, setPricingKey] = useState(data.pricingRules[0]?.key || "basic_website");
+  const [pricingBase, setPricingBase] = useState("50000");
+  const [pricingMin, setPricingMin] = useState("50000");
+  const [pricingRetainer, setPricingRetainer] = useState("20000");
+  const [promotionId, setPromotionId] = useState("");
+  const [promotionName, setPromotionName] = useState("$500 Website Launch Promotion");
+  const [promotionDescription, setPromotionDescription] = useState("Limited promotional build price with optional discounted monthly care.");
+  const [promotionActive, setPromotionActive] = useState(false);
+  const [normalPrice, setNormalPrice] = useState("100000");
+  const [promoPrice, setPromoPrice] = useState("50000");
+  const [normalRetainer, setNormalRetainer] = useState("20000");
+  const [promoRetainer, setPromoRetainer] = useState("10000");
+  const [maxUses, setMaxUses] = useState("10");
+  const [currentUses, setCurrentUses] = useState("0");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function savePricing(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setStatus(null);
+    try {
+      const response = await fetch("/api/admin/pricing", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: pricingKey,
+          basePrice: Number(pricingBase),
+          minPrice: Number(pricingMin),
+          retainerMin: pricingRetainer ? Number(pricingRetainer) : null
+        })
+      });
+      if (!response.ok) throw new Error("Pricing update failed");
+      setStatus("Pricing rule saved. Refreshing portal data...");
+      window.location.reload();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Pricing update failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function savePromotion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setStatus(null);
+    try {
+      const payload = {
+        id: promotionId || undefined,
+        name: promotionName,
+        description: promotionDescription,
+        active: promotionActive,
+        normalPrice: Number(normalPrice),
+        promoPrice: Number(promoPrice),
+        normalRetainer: normalRetainer ? Number(normalRetainer) : null,
+        promoRetainer: promoRetainer ? Number(promoRetainer) : null,
+        maxUses: maxUses ? Number(maxUses) : null,
+        currentUses: currentUses ? Number(currentUses) : 0,
+        startDate: startDate || null,
+        endDate: endDate || null
+      };
+      const response = await fetch("/api/admin/promotions", {
+        method: promotionId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error("Promotion save failed");
+      setStatus("Promotion saved. Refreshing portal data...");
+      window.location.reload();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Promotion save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <ResponsiveTable
+        title="Central pricing rules"
+        headers={["Key", "Label", "Base", "Minimum", "Retainer", "Active"]}
+        rows={data.pricingRules.map((rule) => [rule.key, rule.label, rule.basePrice, rule.minPrice, rule.retainer, rule.active])}
+      />
+      <ResponsiveTable
+        title="Promotions"
+        headers={["ID", "Name", "Active", "Normal", "Promo", "Retainer", "Slots", "Dates"]}
+        rows={data.promotions.map((promotion) => [promotion.id, promotion.name, promotion.active, promotion.normalPrice, promotion.promoPrice, promotion.retainer, promotion.slots, promotion.dates])}
+      />
+      {status ? <p className="rounded-lg border border-white/10 bg-white/8 p-3 text-sm text-slate-200">{status}</p> : null}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <DataPanel title="Edit pricing rule">
+          <form onSubmit={savePricing} className="grid gap-3">
+            <label className="grid gap-2 text-sm text-slate-300">
+              Pricing rule
+              <select value={pricingKey} onChange={(event) => setPricingKey(event.target.value)} className="rounded-lg border border-white/10 bg-obsidian-950 px-3 py-2 text-white">
+                {data.pricingRules.map((rule) => <option key={rule.key} value={rule.key}>{rule.label}</option>)}
+              </select>
+            </label>
+            <AdminInput label="Base price in cents" value={pricingBase} onChange={setPricingBase} />
+            <AdminInput label="Minimum price in cents" value={pricingMin} onChange={setPricingMin} />
+            <AdminInput label="Retainer minimum in cents" value={pricingRetainer} onChange={setPricingRetainer} />
+            <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save pricing rule"}</Button>
+          </form>
+        </DataPanel>
+        <DataPanel title="Create or edit promotion">
+          <form onSubmit={savePromotion} className="grid gap-3">
+            <AdminInput label="Promotion ID for edits" value={promotionId} onChange={setPromotionId} placeholder="Leave blank to create" />
+            <AdminInput label="Name" value={promotionName} onChange={setPromotionName} />
+            <label className="grid gap-2 text-sm text-slate-300">
+              Description
+              <textarea value={promotionDescription} onChange={(event) => setPromotionDescription(event.target.value)} className="min-h-20 rounded-lg border border-white/10 bg-obsidian-950 px-3 py-2 text-white" />
+            </label>
+            <label className="flex items-center gap-3 text-sm text-slate-200">
+              <input type="checkbox" checked={promotionActive} onChange={(event) => setPromotionActive(event.target.checked)} className="h-4 w-4 rounded border-white/20 bg-obsidian-950 accent-obsidian-green" />
+              Active promotion
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <AdminInput label="Normal build cents" value={normalPrice} onChange={setNormalPrice} />
+              <AdminInput label="Promo build cents" value={promoPrice} onChange={setPromoPrice} />
+              <AdminInput label="Normal retainer cents" value={normalRetainer} onChange={setNormalRetainer} />
+              <AdminInput label="Promo retainer cents" value={promoRetainer} onChange={setPromoRetainer} />
+              <AdminInput label="Max uses" value={maxUses} onChange={setMaxUses} />
+              <AdminInput label="Current uses" value={currentUses} onChange={setCurrentUses} />
+              <AdminInput label="Start date" value={startDate} onChange={setStartDate} type="date" />
+              <AdminInput label="End date" value={endDate} onChange={setEndDate} type="date" />
+            </div>
+            <Button type="submit" disabled={saving}>{saving ? "Saving..." : promotionId ? "Update promotion" : "Create promotion"}</Button>
+          </form>
+        </DataPanel>
+      </div>
+    </div>
+  );
+}
+
+function AdminInput({ label, value, onChange, placeholder, type = "text" }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string }) {
+  return (
+    <label className="grid gap-2 text-sm text-slate-300">
+      {label}
+      <input type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="rounded-lg border border-white/10 bg-obsidian-950 px-3 py-2 text-white placeholder:text-slate-600" />
+    </label>
   );
 }
 

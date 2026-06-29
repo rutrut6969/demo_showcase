@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import type { ComplexityLevel } from "@prisma/client";
+import { resolveQuotePricing } from "@/lib/pricing";
 
 export const quoteInputSchema = z.object({
   businessType: z.string().optional(),
@@ -19,6 +20,14 @@ export type QuoteInput = z.infer<typeof quoteInputSchema>;
 export type GeneratedQuote = {
   buildCostMin: number;
   buildCostMax: number;
+  normalPrice: number;
+  promotionalPrice?: number | null;
+  selectedBuildPrice: number;
+  normalRetainer?: number | null;
+  promotionalRetainer?: number | null;
+  selectedRetainer?: number | null;
+  promotionId?: string | null;
+  pricingExplanation: string;
   timeframe: string;
   complexityLevel: ComplexityLevel;
   recommendedPackage: string;
@@ -29,17 +38,17 @@ export type GeneratedQuote = {
   rawResponse?: unknown;
 };
 
-const complexityDefaults: Record<ComplexityLevel, { min: number; max: number; timeframe: string; retainer: string }> = {
-  LOW: { min: 180000, max: 420000, timeframe: "2-4 weeks", retainer: "Essential Retainer" },
-  MODERATE: { min: 450000, max: 950000, timeframe: "4-7 weeks", retainer: "Commerce Retainer" },
-  HIGH: { min: 1000000, max: 2200000, timeframe: "8-12 weeks", retainer: "Enterprise Retainer" },
-  CUSTOM_ENTERPRISE: { min: 2200000, max: 5500000, timeframe: "12+ weeks", retainer: "Enterprise Retainer" }
+const complexityDefaults: Record<ComplexityLevel, { timeframe: string }> = {
+  LOW: { timeframe: "1-3 weeks" },
+  MODERATE: { timeframe: "3-6 weeks" },
+  HIGH: { timeframe: "6-10 weeks" },
+  CUSTOM_ENTERPRISE: { timeframe: "Custom timeline after discovery" }
 };
 
 export async function generateAIQuote(input: QuoteInput): Promise<GeneratedQuote> {
   const parsed = quoteInputSchema.parse(input);
   const complexity = parsed.estimatedComplexity ?? inferComplexity(parsed);
-  const fallback = buildFallbackQuote(parsed, complexity);
+  const fallback = await buildFallbackQuote(parsed, complexity);
 
   if (!process.env.OPENAI_API_KEY) {
     return fallback;
@@ -69,7 +78,11 @@ export async function generateAIQuote(input: QuoteInput): Promise<GeneratedQuote
     const json = JSON.parse(content) as GeneratedQuote;
     return {
       ...fallback,
-      ...json,
+      suggestedAddOns: Array.isArray(json.suggestedAddOns) ? json.suggestedAddOns : fallback.suggestedAddOns,
+      scopeSummary: json.scopeSummary || fallback.scopeSummary,
+      notesForManualReview: json.notesForManualReview || fallback.notesForManualReview,
+      timeframe: json.timeframe || fallback.timeframe,
+      recommendedPackage: json.recommendedPackage || fallback.recommendedPackage,
       complexityLevel: normalizeComplexity(json.complexityLevel) ?? fallback.complexityLevel,
       rawResponse: completion
     };
@@ -94,17 +107,29 @@ function normalizeComplexity(value: unknown): ComplexityLevel | null {
   return null;
 }
 
-function buildFallbackQuote(input: QuoteInput, complexity: ComplexityLevel): GeneratedQuote {
+async function buildFallbackQuote(input: QuoteInput, complexity: ComplexityLevel): Promise<GeneratedQuote> {
   const defaults = complexityDefaults[complexity];
-  const featureCount = input.desiredFeatures.length;
-  const featureAdjustment = Math.min(featureCount * 35000, 350000);
+  const pricing = await resolveQuotePricing(input, complexity);
+  const buildCostMin = pricing.selectedBuildPrice;
+  const buildCostMax = pricing.rule.maxPrice ? Math.max(buildCostMin, pricing.rule.maxPrice) : Math.max(buildCostMin, pricing.normalPrice);
+  const pricingExplanation = pricing.promotionalPrice
+    ? `Normally this project would be approximately ${formatMoney(pricing.normalPrice)}. Because of the current promotion, this project qualifies for a ${formatMoney(pricing.promotionalPrice)} promotional build price. ${pricing.selectedRetainer ? `We recommend the optional ${pricing.retainerTier} at ${formatMoney(pricing.selectedRetainer)}/month.` : `We recommend the optional ${pricing.retainerTier} with custom monthly pricing.`}`
+    : `This project is priced from the configured ${pricing.rule.label} rule at approximately ${formatMoney(pricing.normalPrice)}. ${pricing.selectedRetainer ? `We recommend the optional ${pricing.retainerTier} at ${formatMoney(pricing.selectedRetainer)}/month.` : `We recommend the optional ${pricing.retainerTier} with custom monthly pricing.`}`;
   return {
-    buildCostMin: defaults.min + Math.round(featureAdjustment * 0.5),
-    buildCostMax: defaults.max + featureAdjustment,
+    buildCostMin,
+    buildCostMax,
+    normalPrice: pricing.normalPrice,
+    promotionalPrice: pricing.promotionalPrice,
+    selectedBuildPrice: pricing.selectedBuildPrice,
+    normalRetainer: pricing.normalRetainer,
+    promotionalRetainer: pricing.promotionalRetainer,
+    selectedRetainer: pricing.selectedRetainer,
+    promotionId: pricing.promotion?.id,
+    pricingExplanation,
     timeframe: defaults.timeframe,
     complexityLevel: complexity,
     recommendedPackage: input.recommendedPackage || "Custom Platform Build",
-    suggestedRetainerTier: defaults.retainer,
+    suggestedRetainerTier: pricing.retainerTier,
     suggestedAddOns: [
       "Analytics event mapping",
       "Branded proposal and invoice workflow",
@@ -115,4 +140,8 @@ function buildFallbackQuote(input: QuoteInput, complexity: ComplexityLevel): Gen
     notesForManualReview:
       "Review integrations, content readiness, payment flow requirements, legal/healthcare compliance needs, timeline pressure, and any imported assets before final pricing."
   };
+}
+
+function formatMoney(cents: number) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(cents / 100);
 }

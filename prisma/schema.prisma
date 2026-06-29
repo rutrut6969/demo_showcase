@@ -191,6 +191,14 @@ model AIQuote {
   request                ProjectRequest  @relation(fields: [requestId], references: [id])
   buildCostMin           Int
   buildCostMax           Int
+  normalPrice            Int?
+  promotionalPrice       Int?
+  selectedBuildPrice     Int?
+  normalRetainer         Int?
+  promotionalRetainer    Int?
+  selectedRetainer       Int?
+  promotionId            String?
+  promotion              Promotion?      @relation(fields: [promotionId], references: [id])
   timeframe              String
   complexityLevel        ComplexityLevel
   recommendedPackage     String
@@ -201,6 +209,46 @@ model AIQuote {
   rawResponse            Json?
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
+}
+
+model PricingRule {
+  id              String          @id @default(cuid())
+  key             String          @unique
+  label           String
+  description     String?
+  complexityLevel ComplexityLevel?
+  basePrice       Int
+  minPrice        Int
+  maxPrice        Int?
+  retainerTier    String?
+  retainerMin     Int?
+  retainerMax     Int?
+  active          Boolean         @default(true)
+  sortOrder       Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Promotion {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  active          Boolean   @default(false)
+  normalPrice     Int
+  promoPrice      Int
+  normalRetainer  Int?
+  promoRetainer   Int?
+  maxUses         Int?
+  currentUses     Int       @default(0)
+  startDate       DateTime?
+  endDate         DateTime?
+  aiQuotes        AIQuote[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([active])
+  @@index([startDate])
+  @@index([endDate])
 }
 
 model Invoice {

@@ -5,8 +5,9 @@ import { useState } from "react";
 import { ArrowRight, Bot, CreditCard, DatabaseZap, LockKeyhole, Menu, Sparkles, X } from "lucide-react";
 import { Badge, Button, Section, StatCard } from "@/components/ui";
 import { RequestQuoteModal, type RequestMetadata } from "@/components/RequestQuoteModal";
-import { demoTemplates, featuredProjects, retainerTiers } from "@/lib/data";
+import { demoTemplates, featuredProjects } from "@/lib/data";
 import { demoMiniSites } from "@/lib/demo-mini-sites";
+import { defaultPricingRules, formatCents } from "@/lib/pricing-config";
 
 export function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -92,7 +93,7 @@ export function LandingPage() {
           <div className="mt-10 grid gap-3 sm:grid-cols-3">
             <StatCard label="Demo verticals" value="10" detail="Commerce, healthcare, repair, legal, realty, restaurant, and services." />
             <StatCard label="Ops modules" value="22" detail="CRM, invoices, retainers, AI control, logs, users, tasks, toggles." />
-            <StatCard label="Retainers" value="$200+" detail="Managed platform retainers framed around operational care." />
+            <StatCard label="Retainers" value={`${formatCents(defaultPricingRules[0].retainerMin || 20000)}+`} detail="Managed platform retainers framed around operational care." />
           </div>
         </div>
 
@@ -108,7 +109,7 @@ export function LandingPage() {
               </div>
               <div className="mt-4 grid gap-3">
                 {[
-                  ["AI Quote Generated", "$4.8k-$9.2k", "Commerce Retainer suggested"],
+                  ["AI Quote Generated", `${formatCents(defaultPricingRules[2].basePrice)}+`, "Commerce Retainer suggested"],
                   ["Invoice Awaiting Review", "$2,500 deposit", "Square payment placeholder ready"],
                   ["Demo Conversion", "24 CTA clicks", "Obsidian Tech E.R. trending"],
                   ["Retainer Health", "8 active", "All integrations monitored"]
@@ -220,13 +221,13 @@ export function LandingPage() {
           <h2 className="mt-4 text-3xl font-semibold text-white">Monthly care is positioned as operational platform management, not basic hosting.</h2>
         </div>
         <div className="mt-8 grid gap-4 lg:grid-cols-3">
-          {retainerTiers.map((tier) => (
-            <div key={tier.name} className="glass rounded-lg p-6">
-              <p className="text-sm font-semibold text-obsidian-green">{tier.price}</p>
-              <h3 className="mt-3 text-xl font-semibold text-white">{tier.name}</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-300">{tier.description}</p>
+          {defaultPricingRules.filter((rule) => rule.retainerTier).slice(0, 3).map((rule) => (
+            <div key={rule.key} className="glass rounded-lg p-6">
+              <p className="text-sm font-semibold text-obsidian-green">{rule.retainerMin ? `${formatCents(rule.retainerMin)}${rule.retainerMax && rule.retainerMax !== rule.retainerMin ? `-${formatCents(rule.retainerMax)}` : ""}/month` : "custom pricing"}</p>
+              <h3 className="mt-3 text-xl font-semibold text-white">{rule.retainerTier}</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-300">{rule.description}</p>
               <ul className="mt-5 space-y-2 text-sm text-slate-300">
-                {tier.includes.map((item) => (
+                {["Hosting management", "Security and update care", "Minor content/design updates", "Analytics and integration monitoring"].map((item) => (
                   <li key={item} className="flex gap-2">
                     <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-obsidian-green" />
                     {item}
