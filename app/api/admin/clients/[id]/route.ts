@@ -24,7 +24,7 @@ const actionSchema = z.object({
 });
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
-  const auth = await requireAdminSession("clients:manage");
+  const auth = await requireAdminSession("clients:manage", _request);
   if (auth.response) return auth.response;
   const client = await prisma.client.findUnique({
     where: { id: params.id },
@@ -35,7 +35,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const auth = await requireAdminSession("clients:manage");
+  const auth = await requireAdminSession("clients:manage", request);
   if (auth.response) return auth.response;
   const body = updateSchema.parse(await request.json());
   const client = await prisma.client.update({
@@ -51,7 +51,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const auth = await requireAdminSession("clients:manage");
+  const auth = await requireAdminSession("clients:manage", request);
   if (auth.response) return auth.response;
   const body = actionSchema.default({ action: "archive" }).parse(await request.json().catch(() => ({ action: "archive" })));
   const client = await prisma.client.findUnique({

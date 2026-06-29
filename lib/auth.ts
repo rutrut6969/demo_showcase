@@ -16,6 +16,10 @@ export type SessionUser = {
   mustChangePassword: boolean;
 };
 
+type AdminActionTokenPayload = SessionUser & {
+  adminAction: true;
+};
+
 export async function signIn(email: string, password: string) {
   const user = await prisma.user.findUnique({
     where: { email },
@@ -128,6 +132,32 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   try {
     const verified = await jwtVerify(token, secret);
     return verified.payload as SessionUser;
+  } catch {
+    return null;
+  }
+}
+
+export async function createAdminActionToken(user: SessionUser) {
+  return new SignJWT({ ...user, adminAction: true } satisfies AdminActionTokenPayload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("15m")
+    .sign(secret);
+}
+
+export async function verifyAdminActionToken(token: string): Promise<SessionUser | null> {
+  try {
+    const verified = await jwtVerify(token, secret);
+    const payload = verified.payload as Partial<AdminActionTokenPayload>;
+    if (!payload.adminAction || !payload.id || !payload.email || !payload.name || !payload.role || !Array.isArray(payload.permissions)) return null;
+    return {
+      id: payload.id,
+      email: payload.email,
+      name: payload.name,
+      role: payload.role,
+      permissions: payload.permissions,
+      mustChangePassword: Boolean(payload.mustChangePassword)
+    };
   } catch {
     return null;
   }

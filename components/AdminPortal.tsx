@@ -15,7 +15,7 @@ type AdminUser = {
   role: RoleName;
 };
 
-export function AdminPortal({ user, data }: { user: AdminUser; data: AdminPortalData }) {
+export function AdminPortal({ user, data, actionToken }: { user: AdminUser; data: AdminPortalData; actionToken: string }) {
   const [moduleSlug, setModuleSlug] = useState("dashboard");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const activeModule = adminModules.find((module) => module.slug === moduleSlug) || adminModules[0];
@@ -83,7 +83,7 @@ export function AdminPortal({ user, data }: { user: AdminUser; data: AdminPortal
               </div>
             </div>
 
-            <ModuleContent slug={moduleSlug} role={user.role} roleCapabilities={roleCapabilities} data={data} />
+            <ModuleContent slug={moduleSlug} role={user.role} roleCapabilities={roleCapabilities} data={data} actionToken={actionToken} />
           </div>
         </section>
       </div>
@@ -142,18 +142,18 @@ function AdminNav({ active, onChoose }: { active: string; onChoose: (slug: strin
   );
 }
 
-function ModuleContent({ slug, role, roleCapabilities, data }: { slug: string; role: RoleName; roleCapabilities: string[]; data: AdminPortalData }) {
+function ModuleContent({ slug, role, roleCapabilities, data, actionToken }: { slug: string; role: RoleName; roleCapabilities: string[]; data: AdminPortalData; actionToken: string }) {
   if (slug === "dashboard") return <Dashboard roleCapabilities={roleCapabilities} data={data} />;
   if (slug === "requests") return <RequestsPanel role={role} data={data} />;
-  if (slug === "clients") return <CrmPanel data={data} />;
-  if (slug === "invoices") return <InvoicesPanel data={data} />;
+  if (slug === "clients") return <CrmPanel data={data} actionToken={actionToken} />;
+  if (slug === "invoices") return <InvoicesPanel data={data} actionToken={actionToken} />;
   if (slug === "pipeline") return <PipelinePanel data={data} />;
   if (slug === "demos") return <DemoManagementPanel data={data} />;
   if (slug === "ai-control") return <AiControlPanel data={data} />;
   if (slug === "feature-toggles") return <FeatureTogglesPanel data={data} />;
   if (slug === "retainers") return <RetainersPanel data={data} />;
   if (slug === "analytics") return <AnalyticsPanel data={data} />;
-  if (slug === "pricing") return <PricingPromotionsPanel data={data} />;
+  if (slug === "pricing") return <PricingPromotionsPanel data={data} actionToken={actionToken} />;
   if (slug === "users") return <UsersPanel data={data} />;
   if (slug === "logs" || slug === "audit") return <LogsPanel data={data} />;
   return <GenericModule slug={slug} />;
@@ -222,7 +222,7 @@ function RequestsPanel({ role, data }: { role: RoleName; data: AdminPortalData }
   );
 }
 
-function CrmPanel({ data }: { data: AdminPortalData }) {
+function CrmPanel({ data, actionToken }: { data: AdminPortalData; actionToken: string }) {
   const [status, setStatus] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const filters = ["Marketing consent", "Source", "Selected demo", "Date range", "Abandoned checkout", "Paid client", "Retainer client"];
@@ -241,7 +241,7 @@ function CrmPanel({ data }: { data: AdminPortalData }) {
         method,
         credentials: "include",
         cache: "no-store",
-        headers: { "Content-Type": "application/json" },
+        headers: adminActionHeaders(actionToken),
         body: JSON.stringify(body)
       });
       if (response.status === 401) {
@@ -297,7 +297,7 @@ function CrmPanel({ data }: { data: AdminPortalData }) {
   );
 }
 
-function InvoicesPanel({ data }: { data: AdminPortalData }) {
+function InvoicesPanel({ data, actionToken }: { data: AdminPortalData; actionToken: string }) {
   const [status, setStatus] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
 
@@ -309,7 +309,7 @@ function InvoicesPanel({ data }: { data: AdminPortalData }) {
         method: "POST",
         credentials: "include",
         cache: "no-store",
-        headers: { "Content-Type": "application/json" },
+        headers: adminActionHeaders(actionToken),
         body: JSON.stringify({ action, note: `Admin selected ${action.replaceAll("_", " ")} from invoice panel.` })
       });
       if (response.status === 401) {
@@ -459,7 +459,7 @@ function AnalyticsPanel({ data }: { data: AdminPortalData }) {
   );
 }
 
-function PricingPromotionsPanel({ data }: { data: AdminPortalData }) {
+function PricingPromotionsPanel({ data, actionToken }: { data: AdminPortalData; actionToken: string }) {
   const [pricingKey, setPricingKey] = useState(data.pricingRules[0]?.key || "basic_website");
   const [pricingBase, setPricingBase] = useState("50000");
   const [pricingMin, setPricingMin] = useState("50000");
@@ -488,7 +488,7 @@ function PricingPromotionsPanel({ data }: { data: AdminPortalData }) {
         method: "PATCH",
         credentials: "include",
         cache: "no-store",
-        headers: { "Content-Type": "application/json" },
+        headers: adminActionHeaders(actionToken),
         body: JSON.stringify({
           key: pricingKey,
           basePrice: Number(pricingBase),
@@ -529,7 +529,7 @@ function PricingPromotionsPanel({ data }: { data: AdminPortalData }) {
         method: promotionId ? "PATCH" : "POST",
         credentials: "include",
         cache: "no-store",
-        headers: { "Content-Type": "application/json" },
+        headers: adminActionHeaders(actionToken),
         body: JSON.stringify(payload)
       });
       if (!response.ok) throw new Error("Promotion save failed");
@@ -607,6 +607,13 @@ function AdminInput({ label, value, onChange, placeholder, type = "text" }: { la
       <input type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="rounded-lg border border-white/10 bg-obsidian-950 px-3 py-2 text-white placeholder:text-slate-600" />
     </label>
   );
+}
+
+function adminActionHeaders(actionToken: string) {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${actionToken}`
+  };
 }
 
 function UsersPanel({ data }: { data: AdminPortalData }) {

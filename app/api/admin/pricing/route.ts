@@ -25,7 +25,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdminSession("*");
+  const auth = await requireAdminSession("*", request);
   if (auth.response) return auth.response;
   const body = pricingRuleSchema.parse(await request.json());
   const fallback = defaultPricingRules.find((rule) => rule.key === body.key);

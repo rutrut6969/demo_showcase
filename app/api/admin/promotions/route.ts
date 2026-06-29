@@ -27,7 +27,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAdminSession("*");
+  const auth = await requireAdminSession("*", request);
   if (auth.response) return auth.response;
   const body = promotionSchema.parse(await request.json());
   const promotion = await prisma.promotion.create({
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdminSession("*");
+  const auth = await requireAdminSession("*", request);
   if (auth.response) return auth.response;
   const body = promotionSchema.extend({ id: z.string() }).parse(await request.json());
   const promotion = await prisma.promotion.update({

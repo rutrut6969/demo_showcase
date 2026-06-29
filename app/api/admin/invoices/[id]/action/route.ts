@@ -12,7 +12,7 @@ const actionSchema = z.object({
 const incompleteStatuses: InvoiceStatus[] = ["DRAFT", "AI_GENERATED", "SENT", "VIEWED", "APPROVED", "REVISION_REQUESTED", "DENIED"];
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
-  const auth = await requireAdminSession("requests:view");
+  const auth = await requireAdminSession("requests:view", request);
   if (auth.response) return auth.response;
   const body = actionSchema.parse(await request.json());
 
