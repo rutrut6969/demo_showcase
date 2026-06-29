@@ -639,9 +639,9 @@ function DemoIdentityHero({
               ))}
             </div>
           </div>
-          <div className="relative">
+          <div className="relative min-w-0 overflow-hidden px-0 sm:overflow-visible">
             <DemoScene site={site} activePage={activePage} variant="hero" dark={dark} accent={accent} />
-            <div className="absolute -right-3 -top-3 rounded bg-[#22C55E] px-4 py-2 text-xs font-black uppercase text-[#07111f] shadow-xl">Live demo</div>
+            <div className="absolute right-2 top-2 hidden rounded bg-[#22C55E] px-4 py-2 text-xs font-black uppercase text-[#07111f] shadow-xl sm:block lg:-right-3 lg:-top-3">Live demo</div>
           </div>
         </div>
       </section>
@@ -1267,9 +1267,9 @@ function DemoScene({
   accent: string;
 }) {
   return (
-    <div className="relative min-h-[250px] overflow-hidden rounded-lg border border-black/10 bg-white p-4 shadow-sm">
+    <div className="relative mx-auto min-h-[250px] w-full max-w-[calc(100vw-5.5rem)] overflow-hidden rounded-lg border border-black/10 bg-white p-3 shadow-sm sm:max-w-none sm:p-4">
       <div className="absolute inset-0 opacity-95" style={{ background: `linear-gradient(135deg, ${site.items[0]?.imageTone || accent}, #ffffff 42%, ${accent})` }} />
-      <div className="relative rounded-lg border border-white/70 bg-white/72 p-3 shadow-lg backdrop-blur">
+      <div className="relative rounded-lg border border-white/70 bg-white/72 p-2 shadow-lg backdrop-blur sm:p-3">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: dark }}>{activePage}</p>
@@ -1279,15 +1279,15 @@ function DemoScene({
         </div>
         <div className="mt-4 grid gap-3">
           {site.checkoutLines.slice(0, 3).map((line) => (
-            <div key={line.name} className="flex items-center gap-3 rounded-lg bg-white p-2 shadow-sm">
-              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg" style={{ backgroundColor: line.imageTone || accent }}>
+            <div key={line.name} className="flex min-w-0 items-center gap-2 rounded-lg bg-white p-2 shadow-sm sm:gap-3">
+              <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg sm:h-12 sm:w-12" style={{ backgroundColor: line.imageTone || accent }}>
                 <DemoVisual siteSlug={site.slug} item={line} accent={accent} compact />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-slate-950">{line.name}</p>
                 <p className="truncate text-xs text-slate-500">{line.meta}</p>
               </div>
-              <p className="text-sm font-bold" style={{ color: dark }}>{line.price}</p>
+              <p className="shrink-0 text-sm font-bold" style={{ color: dark }}>{line.price}</p>
             </div>
           ))}
         </div>
