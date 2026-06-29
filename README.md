@@ -22,6 +22,8 @@ The private admin portal is protected by the `obsidian_session` cookie and loads
 - Square webhook endpoint with signature verification and local status updates.
 - Admin login, forced password change, logout, route protection, and admin API guards.
 - Prisma-backed admin dashboard, data panels, pricing controls, and promotion controls.
+- Admin invoice review controls for approve, revise, deny, cancel, mark reviewed, and incomplete-checkout cleanup.
+- Admin customer management for editing, archiving, deleting when safe, anonymizing paid-history clients, opt-out, tags, segments, notes, and consent data.
 
 ## Installation
 
@@ -161,7 +163,21 @@ Admin is available at `/admin`.
 - `/api/admin/*` routes use `requireAdminSession`.
 - `/api/admin/login` returns `{ success, session, mustChangePassword, redirectTo }` and sets the HTTP-only session cookie; the login form redirects to `/admin/password` when password setup is required, otherwise to `redirectTo` or `/admin`.
 
-Implemented admin surfaces include dashboard stats, requests, clients, invoices, payment tracking, pipeline summaries, demo records, AI control summary, retainers, analytics, users, logs, pricing rules, and promotions. Pricing and promotion records can be edited through authenticated admin forms.
+Implemented admin surfaces include dashboard stats, requests, clients, invoices, payment tracking, pipeline summaries, demo records, AI control summary, retainers, analytics, users, logs, pricing rules, and promotions. Pricing, promotion, invoice review, incomplete invoice cleanup, and customer records can be edited through authenticated admin forms and APIs.
+
+Invoice actions:
+
+- `POST /api/admin/invoices/[id]/action` handles approve, revise, deny, cancel, mark reviewed, and delete/archive incomplete checkout.
+- Paid invoices cannot be deleted from the cleanup control.
+- Invoices with payment history but no paid deposit are archived/cancelled instead of hard-deleted.
+- Invoice actions write `AuditLog` records.
+
+Customer actions:
+
+- `GET/POST /api/admin/clients` lists and creates customers.
+- `GET/PATCH/DELETE /api/admin/clients/[id]` views, edits, archives, restores, deletes safe records, or anonymizes paid-history customers.
+- Customers with paid invoices are not hard-deleted; the admin API anonymizes and archives them.
+- Customer records support notes, tags, segments, UTM metadata, selected demo, source, landing page, referrer, consent timestamp, and opt-out state.
 
 ## Square Payments
 
@@ -189,7 +205,7 @@ Secrets such as Square access tokens and OpenAI keys are never exposed to the br
 Data flow:
 
 1. Visitor submits `RequestQuoteModal`.
-2. `/api/requests` validates input, upserts `Client`, creates `ProjectRequest`, resolves server pricing, generates/saves `AIQuote`, and logs analytics.
+2. `/api/requests` validates input, upserts `Client`, stores marketing/source metadata, creates `ProjectRequest`, resolves server pricing, generates/saves `AIQuote`, and logs analytics.
 3. Quote UI displays one-time build and optional retainer separately.
 4. `/api/checkout/accept-estimate` ignores client totals, reloads server quote/pricing, creates `Invoice` and `InvoiceLineItem` records, and increments promotion usage.
 5. `/invoices/[id]` displays the invoice and Square checkout.
@@ -225,9 +241,12 @@ Core models:
 Important relationships:
 
 - `Client` has many requests, invoices, projects, retainers, and media assets.
+- `Client` stores marketing metadata: consent timestamp, opt-out state, UTM fields, landing page, referrer, selected demo, device/browser info, tags, segments, archive/delete/anonymize timestamps.
+- `ProjectRequest` stores request-level source metadata alongside selected demo and quote scope.
 - `ProjectRequest` may have one `AIQuote` and many invoices.
 - `AIQuote` may reference one `Promotion`.
 - `Invoice` has many line items and payment records.
+- `Invoice` stores admin review/cancel/archive timestamps and admin notes for operations review.
 - `PaymentRecord` belongs to an invoice.
 - `PricingRule` is standalone configuration used by pricing services.
 - `Promotion` has many AI quotes and usage counters.
@@ -254,11 +273,13 @@ Admin:
 
 - `GET/PATCH /api/admin/pricing` lists and edits pricing rules.
 - `GET/POST/PATCH /api/admin/promotions` lists, creates, and edits promotions.
-- Other `/api/admin/*` routes manage clients, users, requests, demos, events, announcements, and integration settings.
+- `POST /api/admin/invoices/[id]/action` performs authenticated invoice review and cleanup actions.
+- `GET/POST /api/admin/clients` and `GET/PATCH/DELETE /api/admin/clients/[id]` manage customer records with archive/anonymize safety rules.
+- Other `/api/admin/*` routes manage users, requests, demos, events, announcements, and integration settings.
 
 Exports and analytics:
 
-- `GET /api/exports/[audience]` exports audience data.
+- `GET /api/exports/[audience]` exports audience data and requires admin authentication. Filters include `marketingConsent`, `source`, `selectedDemo`, `createdFrom`, `createdTo`, `abandonedCheckout`, `paidClient`, and `retainerClient`.
 - `POST /api/analytics` records analytics events.
 - `POST /api/logs/site` records site logs.
 
@@ -278,6 +299,8 @@ Production must provide `DATABASE_URL`, `AUTH_SECRET`, Square variables, and `NE
 - Admin redirects to password page: the seeded owner account has `mustChangePassword=true`.
 - Admin login returns 200 but stays on the same page: inspect the `/api/admin/login` JSON response. A successful response must include `success: true` and `session.userId`; otherwise the client intentionally shows an incomplete-session error instead of navigating.
 - Admin login works locally but not in production: confirm `AUTH_SECRET` is set, the app is served over HTTPS so the secure cookie can be stored, and the browser receives the `obsidian_session` `Set-Cookie` header from `/api/admin/login`.
+- Admin export returns 401/403: exports are intentionally admin-only; sign in with a role that has `clients:manage`.
+- Incomplete invoice cleanup is blocked: paid invoices are protected. Use archive/anonymize style workflows for records with financial history.
 - AI quote uses fallback: set `OPENAI_API_KEY`; otherwise fallback quote mode is expected.
 - Quote price seems wrong: check active `PricingRule` and `Promotion` records first.
 - Promotion does not apply: confirm active status, dates, and remaining `maxUses`.
@@ -307,12 +330,16 @@ Implemented:
 - Square webhook endpoint with signature verification.
 - Admin session login, forced password change, and logout.
 - Admin route and API protection.
+- Admin-protected customer exports with marketing/audience filters.
+- Admin invoice review actions and incomplete-checkout cleanup controls.
+- Admin customer edit/archive/delete/anonymize controls.
+- Marketing source capture for UTM fields, landing page, referrer, selected demo, consent timestamp, opt-out, tags, and segments.
 - Prisma-backed admin dashboard and data panels.
 - Seeded roles, owner account, demo templates, pricing rules, promotion template, and retainer settings.
 
 Partially Implemented:
 
-- Admin CRUD is functional for pricing/promotions and data-backed for review panels, but not every module has full create/edit/delete forms.
+- Admin CRUD is functional for pricing/promotions/customers/invoice review and data-backed for review panels, but not every module has full create/edit/delete forms.
 - Pipeline is database-backed but not drag-and-drop persisted.
 - Retainers are optional line items, but Square subscription billing is not automated.
 - Integration settings persist but do not have a polished editing workspace.
@@ -328,6 +355,7 @@ Planned:
 - Production notification emails.
 - Square refund handling UI.
 - Automated tests for quote, checkout, admin, and webhook routes.
+- Dedicated marketing segmentation UI beyond export filters.
 
 Technical Debt:
 
@@ -335,6 +363,7 @@ Technical Debt:
 - Public invoice URLs rely on unguessable invoice IDs rather than separate signed client tokens.
 - Payment idempotency is stored in metadata rather than a dedicated database column.
 - Some admin modules summarize data rather than providing full management workspaces.
+- `npm audit` reports inherited dependency vulnerabilities; review dependency upgrades separately because force-fixing may introduce breaking framework changes.
 - Local development requires a reachable PostgreSQL database; no SQLite fallback is configured.
 
 ## Project Status
@@ -345,6 +374,8 @@ Production Ready:
 - Request capture.
 - Admin authentication/logout.
 - Admin API protection.
+- Admin-protected customer exports.
+- Admin invoice/customer action APIs with audit logs.
 - Server-side pricing validation.
 - Square card payment path when environment variables are configured.
 
@@ -355,6 +386,7 @@ Beta:
 - Optional retainer checkout line items.
 - Square webhook reconciliation.
 - Admin dashboard and review panels.
+- Marketing/customer metadata capture and export filters.
 
 In Development:
 
@@ -371,6 +403,19 @@ Planned:
 - Automated route and payment tests.
 
 ## Changelog
+
+2026-06-29:
+
+- Confirmed `Invoice.projectId` is singular in `prisma/schema.prisma`; regenerated Prisma Client successfully.
+- Added customer marketing metadata fields, archive/delete/anonymize timestamps, tags, segments, and opt-out tracking.
+- Added request-level UTM, landing page, referrer, device, and browser capture.
+- Added invoice review/archive fields and admin notes.
+- Added admin invoice action API with approve, revise, deny, cancel, mark reviewed, and incomplete checkout delete/archive behavior.
+- Added audit logs for invoice and customer admin actions.
+- Added admin customer detail/update/archive/delete/anonymize API.
+- Added visible invoice and customer action buttons in the admin portal.
+- Protected customer export API with admin auth and added audience filters.
+- Ran `npm install`, `npm ci`, `prisma generate`, `npm run build`, and `npx tsc --noEmit`.
 
 2026-06-28:
 

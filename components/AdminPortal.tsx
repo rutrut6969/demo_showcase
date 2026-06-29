@@ -223,14 +223,63 @@ function RequestsPanel({ role, data }: { role: RoleName; data: AdminPortalData }
 }
 
 function CrmPanel({ data }: { data: AdminPortalData }) {
-  const filters = ["All leads", "Approved clients", "Past clients", "Retainer clients", "Ecommerce customers", "Abandoned quote requests", "Demo-interest category", "Location/service area", "Consent status"];
-  const exports = ["Meta/Facebook Custom Audiences", "Google Ads Customer Match", "Email marketing", "CRM backups", "Lead reports", "Customer reports"];
+  const [status, setStatus] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const filters = ["Marketing consent", "Source", "Selected demo", "Date range", "Abandoned checkout", "Paid client", "Retainer client"];
+  const exports = [
+    ["Consented clients", "/api/exports/clients?marketingConsent=true"],
+    ["Abandoned checkout", "/api/exports/clients?abandonedCheckout=1"],
+    ["Paid clients", "/api/exports/clients?paidClient=1"],
+    ["Retainer clients", "/api/exports/clients?retainerClient=1"]
+  ];
+
+  async function updateClient(clientId: string, body: object, method = "PATCH") {
+    setSavingId(clientId);
+    setStatus(null);
+    try {
+      const response = await fetch(`/api/admin/clients/${clientId}`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) throw new Error((await response.json().catch(() => null))?.error || "Client action failed");
+      setStatus("Client updated. Refreshing admin data...");
+      window.location.reload();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Client action failed");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
-      <ResponsiveTable title="Client records" headers={["Client", "Email", "Phone", "Source", "Requests", "Invoices", "Consent"]} rows={data.clients.map((client) => [client.name, client.email, client.phone, client.source, client.requests, client.invoices, client.consent])} />
+      <ResponsiveTable title="Client records" headers={["Client", "Email", "Phone", "Source", "Demo", "Requests", "Invoices", "Paid", "Consent", "Opt out", "Tags"]} rows={data.clients.map((client) => [client.name, client.email, client.phone, client.source, client.selectedDemo, client.requests, client.invoices, client.paid, client.consent, client.optOut, client.tags])} />
+      <DataPanel title="Customer management">
+        {status ? <p className="mb-3 rounded-lg border border-white/10 bg-white/8 p-3 text-sm text-slate-200">{status}</p> : null}
+        <div className="grid gap-3">
+          {data.clients.slice(0, 10).map((client) => (
+            <div key={client.id} className="rounded-lg border border-white/10 bg-white/6 p-3">
+              <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+                <div>
+                  <p className="font-semibold text-white">{client.name}</p>
+                  <p className="text-xs text-slate-400">{client.email} · {client.source}</p>
+                  <p className="mt-1 text-xs text-slate-500">Tags: {client.tags} · Segments: {client.segments}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" disabled={savingId === client.id} onClick={() => updateClient(client.id, { notes: client.notes === "-" ? "Reviewed by admin." : `${client.notes}\nReviewed by admin.` })}>Mark reviewed</Button>
+                  <Button variant="secondary" disabled={savingId === client.id} onClick={() => updateClient(client.id, { marketingOptOut: true })}>Opt out</Button>
+                  <Button variant="secondary" disabled={savingId === client.id} onClick={() => updateClient(client.id, { action: "archive" }, "DELETE")}>Archive</Button>
+                  <Button variant="danger" disabled={savingId === client.id} onClick={() => updateClient(client.id, { action: client.paid === "Yes" ? "anonymize" : "delete" }, "DELETE")}>{client.paid === "Yes" ? "Anonymize" : "Delete"}</Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </DataPanel>
       <DataPanel title="CSV export tools">
         <div className="grid gap-2">
-          {exports.map((item) => <Button key={item} variant="secondary" className="justify-start"><Download className="h-4 w-4" /> {item}</Button>)}
+          {exports.map(([label, href]) => <Link key={label} href={href} className="focus-ring inline-flex min-h-11 items-center justify-start gap-2 rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/16"><Download className="h-4 w-4" /> {label}</Link>)}
         </div>
       </DataPanel>
       <DataPanel title="Filters">
@@ -243,9 +292,56 @@ function CrmPanel({ data }: { data: AdminPortalData }) {
 }
 
 function InvoicesPanel({ data }: { data: AdminPortalData }) {
+  const [status, setStatus] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  async function invoiceAction(invoiceId: string, action: string) {
+    setSavingId(invoiceId);
+    setStatus(null);
+    try {
+      const response = await fetch(`/api/admin/invoices/${invoiceId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, note: `Admin selected ${action.replaceAll("_", " ")} from invoice panel.` })
+      });
+      if (!response.ok) throw new Error((await response.json().catch(() => null))?.error || "Invoice action failed");
+      setStatus("Invoice action saved. Refreshing admin data...");
+      window.location.reload();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Invoice action failed");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   return (
     <div className="space-y-5">
-      <ResponsiveTable title="Square-backed invoices" headers={["Invoice", "Client", "Status", "Total", "Deposit", "Paid"]} rows={data.invoices.map((invoice) => [invoice.invoice, invoice.client, invoice.status, invoice.total, invoice.deposit, invoice.paid])} />
+      <ResponsiveTable title="Square-backed invoices" headers={["Invoice", "Client", "Status", "Total", "Deposit", "Paid", "Reviewed"]} rows={data.invoices.map((invoice) => [invoice.invoice, invoice.client, invoice.status, invoice.total, invoice.deposit, invoice.paid, invoice.reviewed])} />
+      <DataPanel title="Invoice review controls">
+        {status ? <p className="mb-3 rounded-lg border border-white/10 bg-white/8 p-3 text-sm text-slate-200">{status}</p> : null}
+        <div className="grid gap-3">
+          {data.invoices.map((invoice) => (
+            <div key={invoice.id} className="rounded-lg border border-white/10 bg-white/6 p-4">
+              <div className="grid gap-3 xl:grid-cols-[1fr_auto] xl:items-start">
+                <div>
+                  <p className="font-semibold text-white">{invoice.invoice} · {invoice.client}</p>
+                  <p className="mt-1 text-sm text-slate-300">{invoice.summary}</p>
+                  <p className="mt-2 text-xs text-slate-500">Items: {invoice.items}</p>
+                  <p className="mt-1 text-xs text-slate-500">Admin notes: {invoice.adminNotes}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" disabled={savingId === invoice.id} onClick={() => invoiceAction(invoice.id, "mark_reviewed")}>Mark reviewed</Button>
+                  <Button variant="secondary" disabled={savingId === invoice.id} onClick={() => invoiceAction(invoice.id, "approve")}>Approve</Button>
+                  <Button variant="secondary" disabled={savingId === invoice.id} onClick={() => invoiceAction(invoice.id, "revise")}>Revise</Button>
+                  <Button variant="secondary" disabled={savingId === invoice.id} onClick={() => invoiceAction(invoice.id, "deny")}>Deny</Button>
+                  <Button variant="secondary" disabled={savingId === invoice.id} onClick={() => invoiceAction(invoice.id, "cancel")}>Cancel</Button>
+                  {invoice.canDeleteIncomplete === "Yes" ? <Button variant="danger" disabled={savingId === invoice.id} onClick={() => invoiceAction(invoice.id, "delete_incomplete")}>Delete incomplete</Button> : null}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </DataPanel>
       <ResponsiveTable title="Payment records" headers={["Invoice", "Client", "Status", "Amount", "Method", "Square Payment"]} rows={data.payments.map((payment) => [payment.invoice, payment.client, payment.status, payment.amount, payment.method, payment.squarePaymentId])} />
       <DataPanel title="Invoice workflow">
         <div className="grid gap-3 md:grid-cols-4">

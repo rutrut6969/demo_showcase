@@ -62,8 +62,8 @@ export async function getAdminPortalData() {
       paidDepositCount
     ] = await Promise.all([
       prisma.projectRequest.findMany({ take: 50, orderBy: { createdAt: "desc" }, include: { client: true, aiQuote: true, invoices: { include: { payments: true } } } }),
-      prisma.client.findMany({ take: 50, orderBy: { createdAt: "desc" }, include: { projectRequests: true, invoices: true, projects: true } }),
-      prisma.invoice.findMany({ take: 50, orderBy: { createdAt: "desc" }, include: { client: true, request: true, payments: true } }),
+      prisma.client.findMany({ take: 50, where: { deletedAt: null }, orderBy: { createdAt: "desc" }, include: { projectRequests: true, invoices: { include: { payments: true } }, projects: true, retainers: true } }),
+      prisma.invoice.findMany({ take: 50, where: { archivedAt: null }, orderBy: { createdAt: "desc" }, include: { client: true, request: true, payments: true, lineItems: true } }),
       prisma.paymentRecord.findMany({ take: 50, orderBy: { createdAt: "desc" }, include: { invoice: { include: { client: true, request: true } } } }),
       prisma.pricingRule.findMany({ take: 50, orderBy: { sortOrder: "asc" } }),
       prisma.promotion.findMany({ take: 50, orderBy: { createdAt: "desc" } }),
@@ -112,10 +112,18 @@ export async function getAdminPortalData() {
         email: client.email,
         phone: client.phone || "-",
         source: client.source || client.linkedDemoInterest || "-",
+        selectedDemo: client.selectedDemo || client.linkedDemoInterest || "-",
         requests: String(client.projectRequests.length),
         invoices: String(client.invoices.length),
+        paid: client.invoices.some((invoice) => invoice.payments.some((payment) => payment.status === "PAID")) ? "Yes" : "No",
+        retainer: client.retainers.some((retainer) => retainer.paymentStatus === "PAID") ? "Yes" : "No",
         projects: String(client.projects.length),
-        consent: client.marketingConsent ? "Yes" : "No"
+        consent: client.marketingConsent && !client.marketingOptOut ? "Yes" : "No",
+        optOut: client.marketingOptOut ? "Yes" : "No",
+        tags: client.tags.join(", ") || "-",
+        segments: client.segments.join(", ") || "-",
+        notes: client.notes || "-",
+        archived: client.archivedAt ? "Yes" : "No"
       })),
       invoices: invoices.map((invoice) => ({
         id: invoice.id,
@@ -124,7 +132,12 @@ export async function getAdminPortalData() {
         status: label(invoice.status),
         total: money(invoice.total),
         deposit: money(invoice.depositDue),
-        paid: money(invoice.payments.filter((payment) => payment.status === "PAID").reduce((sum, payment) => sum + payment.amount, 0))
+        paid: money(invoice.payments.filter((payment) => payment.status === "PAID").reduce((sum, payment) => sum + payment.amount, 0)),
+        summary: invoice.projectSummary,
+        items: invoice.lineItems.map((item) => `${item.description}: ${money(item.totalAmount)}`).join("; ") || "-",
+        adminNotes: invoice.adminNotes || "-",
+        reviewed: invoice.reviewedAt?.toLocaleDateString() || "-",
+        canDeleteIncomplete: invoice.payments.some((payment) => payment.status === "PAID") || invoice.status === "PAID" || invoice.status === "DEPOSIT_PAID" ? "No" : "Yes"
       })),
       payments: payments.map((payment) => ({
         id: payment.id,

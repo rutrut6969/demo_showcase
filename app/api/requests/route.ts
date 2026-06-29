@@ -13,6 +13,15 @@ const requestSchema = z.object({
   demoCategory: z.string().optional(),
   recommendedPackage: z.string().optional(),
   sourcePage: z.string().optional(),
+  utmSource: z.string().optional(),
+  utmCampaign: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmContent: z.string().optional(),
+  utmTerm: z.string().optional(),
+  landingPage: z.string().optional(),
+  referrer: z.string().optional(),
+  deviceInfo: z.string().optional(),
+  browserInfo: z.string().optional(),
   estimatedComplexity: z.enum(["LOW", "MODERATE", "HIGH", "CUSTOM_ENTERPRISE"]).optional(),
   desiredFeatures: z.array(z.string()).default([]),
   budgetRange: z.string().optional(),
@@ -26,6 +35,9 @@ export async function POST(request: Request) {
   const body = await request.json();
   const parsed = requestSchema.parse(body);
   const quote = await generateAIQuote(parsed);
+  const userAgent = request.headers.get("user-agent") || undefined;
+  const referer = request.headers.get("referer") || undefined;
+  const marketingConsentAt = parsed.marketingConsent ? new Date() : undefined;
 
   try {
     const client = await prisma.client.upsert({
@@ -35,7 +47,19 @@ export async function POST(request: Request) {
         businessName: parsed.businessName,
         phone: parsed.phone,
         marketingConsent: parsed.marketingConsent,
-        linkedDemoInterest: parsed.selectedDemo
+        ...(marketingConsentAt ? { marketingConsentAt } : {}),
+        linkedDemoInterest: parsed.selectedDemo,
+        selectedDemo: parsed.selectedDemo,
+        source: parsed.sourcePage,
+        utmSource: parsed.utmSource,
+        utmCampaign: parsed.utmCampaign,
+        utmMedium: parsed.utmMedium,
+        utmContent: parsed.utmContent,
+        utmTerm: parsed.utmTerm,
+        landingPage: parsed.landingPage || parsed.sourcePage,
+        referrer: parsed.referrer || referer,
+        deviceInfo: parsed.deviceInfo,
+        browserInfo: parsed.browserInfo || userAgent
       },
       create: {
         name: parsed.name,
@@ -43,8 +67,19 @@ export async function POST(request: Request) {
         email: parsed.email,
         phone: parsed.phone,
         marketingConsent: parsed.marketingConsent,
+        marketingConsentAt,
         linkedDemoInterest: parsed.selectedDemo,
-        source: parsed.sourcePage
+        selectedDemo: parsed.selectedDemo,
+        source: parsed.sourcePage,
+        utmSource: parsed.utmSource,
+        utmCampaign: parsed.utmCampaign,
+        utmMedium: parsed.utmMedium,
+        utmContent: parsed.utmContent,
+        utmTerm: parsed.utmTerm,
+        landingPage: parsed.landingPage || parsed.sourcePage,
+        referrer: parsed.referrer || referer,
+        deviceInfo: parsed.deviceInfo,
+        browserInfo: parsed.browserInfo || userAgent
       }
     });
 
@@ -60,6 +95,15 @@ export async function POST(request: Request) {
         demoCategory: parsed.demoCategory,
         recommendedPackage: parsed.recommendedPackage,
         sourcePage: parsed.sourcePage,
+        utmSource: parsed.utmSource,
+        utmCampaign: parsed.utmCampaign,
+        utmMedium: parsed.utmMedium,
+        utmContent: parsed.utmContent,
+        utmTerm: parsed.utmTerm,
+        landingPage: parsed.landingPage || parsed.sourcePage,
+        referrer: parsed.referrer || referer,
+        deviceInfo: parsed.deviceInfo,
+        browserInfo: parsed.browserInfo || userAgent,
         estimatedComplexity: quote.complexityLevel,
         desiredFeatures: parsed.desiredFeatures,
         budgetRange: parsed.budgetRange,

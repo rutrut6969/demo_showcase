@@ -134,9 +134,27 @@ model Client {
   phone             String?
   address           String?
   marketingConsent  Boolean          @default(false)
+  marketingConsentAt DateTime?
+  marketingOptOut    Boolean         @default(false)
+  marketingOptOutAt  DateTime?
   source            String?
+  utmSource         String?
+  utmCampaign       String?
+  utmMedium         String?
+  utmContent        String?
+  utmTerm           String?
+  landingPage       String?
+  referrer          String?
+  selectedDemo      String?
+  deviceInfo        String?
+  browserInfo       String?
+  tags              String[]
+  segments          String[]
   notes             String?
   linkedDemoInterest String?
+  archivedAt        DateTime?
+  deletedAt         DateTime?
+  anonymizedAt      DateTime?
   projectRequests   ProjectRequest[]
   projects          Project[]
   invoices          Invoice[]
@@ -147,6 +165,10 @@ model Client {
 
   @@index([email])
   @@index([marketingConsent])
+  @@index([marketingOptOut])
+  @@index([source])
+  @@index([selectedDemo])
+  @@index([archivedAt])
 }
 
 model ProjectRequest {
@@ -162,6 +184,15 @@ model ProjectRequest {
   demoCategory          String?
   recommendedPackage    String?
   sourcePage            String?
+  utmSource             String?
+  utmCampaign           String?
+  utmMedium             String?
+  utmContent            String?
+  utmTerm               String?
+  landingPage           String?
+  referrer              String?
+  deviceInfo            String?
+  browserInfo           String?
   estimatedComplexity   ComplexityLevel @default(MODERATE)
   desiredFeatures       String[]
   budgetRange           String?
@@ -272,10 +303,17 @@ model Invoice {
   squarePaymentLink     String?
   viewedAt              DateTime?
   approvedAt            DateTime?
+  reviewedAt            DateTime?
+  cancelledAt           DateTime?
+  archivedAt            DateTime?
+  adminNotes            String?
   lineItems             InvoiceLineItem[]
   payments              PaymentRecord[]
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
+
+  @@index([status])
+  @@index([archivedAt])
 }
 
 model InvoiceLineItem {
