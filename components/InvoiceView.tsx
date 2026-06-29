@@ -213,36 +213,36 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
+    <main className="min-h-screen overflow-x-hidden bg-slate-100 text-slate-950">
       <header className="border-b border-slate-200 bg-slate-950 text-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
+          <Link href="/" className="inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white">
             <ArrowLeft className="h-4 w-4" /> Obsidian Systems LLC
           </Link>
-          <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">{status}</Badge>
+          <Badge className="shrink-0 border-emerald-400/30 bg-emerald-400/10 text-emerald-200">{status}</Badge>
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6 rounded-lg border border-violet-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-violet-700">AI estimate checkout</p>
-          <h1 className="mt-3 text-3xl font-semibold">Review your Obsidian Systems project checkout</h1>
+      <section className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
+        <div className="mb-4 min-w-0 rounded-lg border border-violet-200 bg-white p-4 shadow-sm sm:mb-6 sm:p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-700 sm:text-sm">AI estimate checkout</p>
+          <h1 className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl">Review your Obsidian Systems project checkout</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
             This estimate is AI-generated and may be adjusted after manual review depending on scope, integrations, content, timeline, and technical requirements.
           </p>
         </div>
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
-            <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-violet-700">Custom project checkout</p>
-                <h1 className="mt-3 text-3xl font-semibold">{invoice.invoiceNumber}</h1>
-                <p className="mt-2 text-slate-600">{invoice.projectSummary}</p>
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-6">
+          <div className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-8">
+            <div className="flex min-w-0 flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-700 sm:text-sm">Custom project checkout</p>
+                <h1 className="mt-3 break-words text-2xl font-semibold leading-tight sm:text-3xl">{invoice.invoiceNumber}</h1>
+                <p className="mt-2 break-words text-sm leading-6 text-slate-600 sm:text-base">{invoice.projectSummary}</p>
                 {invoice.selectedDemo ? <p className="mt-2 text-sm font-semibold text-slate-500">Selected style: {invoice.selectedDemo}</p> : null}
               </div>
-              <div className="text-left sm:text-right">
-                <p className="font-semibold">{invoice.clientName}</p>
-                <p className="text-sm text-slate-500">{invoice.clientEmail}</p>
+              <div className="min-w-0 text-left sm:text-right">
+                <p className="break-words font-semibold">{invoice.clientName}</p>
+                <p className="break-all text-sm text-slate-500">{invoice.clientEmail}</p>
               </div>
             </div>
 
@@ -256,16 +256,16 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
               <h2 className="text-xl font-semibold">Scope breakdown</h2>
               <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
                 {invoice.scopeBreakdown.map((item) => (
-                  <li key={item} className="flex gap-3">
+                  <li key={item} className="flex min-w-0 gap-3">
                     <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-                    {item}
+                    <span className="min-w-0 break-words">{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-[620px] w-full border-separate border-spacing-y-2 text-left text-sm">
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full border-separate border-spacing-y-2 text-left text-sm">
                 <thead className="text-xs uppercase tracking-[0.14em] text-slate-500">
                   <tr>
                     <th className="px-3 py-2">Item</th>
@@ -286,29 +286,43 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
                 </tbody>
               </table>
             </div>
+            <div className="grid gap-3 sm:hidden">
+              {invoice.lineItems.map((item) => (
+                <div key={item.description} className="rounded-lg bg-slate-50 p-3 text-sm">
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <p className="min-w-0 break-words font-medium">{item.description}</p>
+                    <p className="shrink-0 font-semibold">{formatCurrency(item.quantity * item.unitAmount)}</p>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-200 pt-3 text-xs text-slate-500">
+                    <span>Qty {item.quantity}</span>
+                    <span className="text-right">Unit {formatCurrency(item.unitAmount)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
 
             <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
               <p className="font-semibold">Terms and disclaimer</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{invoice.terms}</p>
+              <p className="mt-2 break-words text-sm leading-6 text-slate-600">{invoice.terms}</p>
             </div>
           </div>
 
-          <aside className="space-y-4">
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <aside className="min-w-0 space-y-4">
+            <div className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-emerald-600" />
                 <p className="font-semibold">Obsidian branded invoice</p>
               </div>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
+              <p className="mt-3 break-words text-sm leading-6 text-slate-600">
                 This page is custom built inside the app while payment processing is Square-powered through the configured sandbox or production credentials.
               </p>
               <div className="mt-5 rounded-lg bg-slate-950 p-4 text-white">
                 <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Retainer recommendation</p>
-                <p className="mt-2 font-semibold">{invoice.retainerRecommendation}</p>
+                <p className="mt-2 break-words font-semibold">{invoice.retainerRecommendation}</p>
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
               <p className="font-semibold">Client response</p>
               <div className="mt-4 grid gap-2">
                 <button className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-transparent bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400" onClick={() => respondToInvoice("APPROVED")}>
@@ -323,12 +337,12 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
               <p className="font-semibold">Secure deposit payment</p>
-              <p className="mt-2 text-sm text-slate-600">Card details are collected by Square Web Payments SDK inside this custom checkout. Secret Square credentials never enter the browser.</p>
+              <p className="mt-2 break-words text-sm leading-6 text-slate-600">Card details are collected by Square Web Payments SDK inside this custom checkout. Secret Square credentials never enter the browser.</p>
               <label className="mt-4 flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                 <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} className="mt-1 h-4 w-4 accent-emerald-500" />
-                I acknowledge this AI-generated estimate may change after manual review.
+                <span className="min-w-0 break-words">I acknowledge this AI-generated estimate may change after manual review.</span>
               </label>
               {squareConfig?.applicationId && squareConfig.locationId ? (
                 <>
@@ -376,9 +390,9 @@ function loadSquareScript(environment: "sandbox" | "production") {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold">{value}</p>
+      <p className="mt-1 break-words text-xl font-semibold">{value}</p>
     </div>
   );
 }
