@@ -159,6 +159,7 @@ Admin is available at `/admin`.
 - `/admin/logout` destroys the session cookie and redirects to login.
 - `/admin` is protected by `getSessionUser`.
 - `/api/admin/*` routes use `requireAdminSession`.
+- `/api/admin/login` returns `{ success, session, mustChangePassword, redirectTo }` and sets the HTTP-only session cookie; the login form redirects to `/admin/password` when password setup is required, otherwise to `redirectTo` or `/admin`.
 
 Implemented admin surfaces include dashboard stats, requests, clients, invoices, payment tracking, pipeline summaries, demo records, AI control summary, retainers, analytics, users, logs, pricing rules, and promotions. Pricing and promotion records can be edited through authenticated admin forms.
 
@@ -275,6 +276,8 @@ Production must provide `DATABASE_URL`, `AUTH_SECRET`, Square variables, and `NE
 
 - Admin login fails: run `npm run db:seed`, confirm `DATABASE_URL`, and use the generated temporary password.
 - Admin redirects to password page: the seeded owner account has `mustChangePassword=true`.
+- Admin login returns 200 but stays on the same page: inspect the `/api/admin/login` JSON response. A successful response must include `success: true` and `session.userId`; otherwise the client intentionally shows an incomplete-session error instead of navigating.
+- Admin login works locally but not in production: confirm `AUTH_SECRET` is set, the app is served over HTTPS so the secure cookie can be stored, and the browser receives the `obsidian_session` `Set-Cookie` header from `/api/admin/login`.
 - AI quote uses fallback: set `OPENAI_API_KEY`; otherwise fallback quote mode is expected.
 - Quote price seems wrong: check active `PricingRule` and `Promotion` records first.
 - Promotion does not apply: confirm active status, dates, and remaining `maxUses`.
