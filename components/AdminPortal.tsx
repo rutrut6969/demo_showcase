@@ -260,7 +260,7 @@ function CrmPanel({ data, actionToken }: { data: AdminPortalData; actionToken: s
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
-      <ResponsiveTable title="Client records" headers={["Client", "Email", "Phone", "Source", "Demo", "Requests", "Invoices", "Paid", "Consent", "Opt out", "Tags"]} rows={data.clients.map((client) => [client.name, client.email, client.phone, client.source, client.selectedDemo, client.requests, client.invoices, client.paid, client.consent, client.optOut, client.tags])} />
+      <ResponsiveTable title="Client records" headers={["Client", "Email", "Phone", "Source", "Demo", "Requests", "Invoices", "Paid", "Saved card", "Consent", "Opt out", "Tags"]} rows={data.clients.map((client) => [client.name, client.email, client.phone, client.source, client.selectedDemo, client.requests, client.invoices, client.paid, client.savedCard, client.consent, client.optOut, client.tags])} />
       <DataPanel title="Customer management">
         {status ? <p className="mb-3 rounded-lg border border-white/10 bg-white/8 p-3 text-sm text-slate-200">{status}</p> : null}
         <div className="grid gap-3">
@@ -404,15 +404,35 @@ function invoiceActionStatus(action: string, fallback: string) {
 }
 
 function RetainersPanel({ data }: { data: AdminPortalData }) {
+  const [busyId, setBusyId] = useState("");
+  const [message, setMessage] = useState("");
+
+  async function cancelRetainer(id: string) {
+    setBusyId(id);
+    setMessage("");
+    const response = await fetch(`/api/admin/retainers/${id}/cancel`, { method: "POST", credentials: "include" });
+    const result = await response.json().catch(() => null);
+    setMessage(response.ok && result?.ok ? "Retainer canceled." : result?.error || "Retainer cancel failed.");
+    setBusyId("");
+  }
+
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      {data.retainers.map((retainer) => (
-        <DataPanel key={`${retainer.client}-${retainer.name}`} title={retainer.name}>
-          <p className="text-2xl font-semibold text-white">{retainer.price}</p>
-          <MetricList items={[`Client: ${retainer.client}`, `Status: ${retainer.status}`, `Renewal: ${retainer.renewal}`]} />
-        </DataPanel>
-      ))}
-    </div>
+    <>
+      {message ? <p className="mb-4 rounded-lg border border-white/10 bg-white/8 p-3 text-sm text-slate-200">{message}</p> : null}
+      <div className="grid gap-4 lg:grid-cols-3">
+        {data.retainers.map((retainer) => (
+          <DataPanel key={`${retainer.client}-${retainer.name}-${retainer.id}`} title={retainer.name}>
+            <p className="text-2xl font-semibold text-white">{retainer.price}</p>
+            <MetricList items={[`Client: ${retainer.client}`, `Payment: ${retainer.status}`, `Subscription: ${retainer.subscription}`, `Next billing: ${retainer.renewal}`, `Payment method: ${retainer.card}`, `Failed payments: ${retainer.failed}`, `Follow-up: ${retainer.followUp}`]} />
+            {retainer.id && retainer.subscription !== "Canceled" && retainer.client !== "Template" ? (
+              <Button variant="secondary" disabled={busyId === retainer.id} onClick={() => cancelRetainer(retainer.id)}>
+                {busyId === retainer.id ? "Canceling..." : "Cancel retainer"}
+              </Button>
+            ) : null}
+          </DataPanel>
+        ))}
+      </div>
+    </>
   );
 }
 

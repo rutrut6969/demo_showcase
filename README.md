@@ -19,8 +19,11 @@ The private admin portal is protected by the `obsidian_session` cookie and loads
 - Estimate acceptance creates invoices with project build line items, separate deposit due, and separate optional retainer metadata.
 - Mobile-first step checkout: review, approval, payment, and confirmation.
 - Custom Square Web Payments SDK card checkout that activates only after invoice approval.
+- Client portal payment methods with Square-vaulted saved cards.
+- Remaining-balance and future-invoice payment support using saved Square cards.
 - Optional Afterpay/Clearpay rendering when Square reports support.
 - Square webhook endpoint with signature verification and local status updates.
+- Square-backed retainer subscription records with active, pending setup, past due, and canceled status tracking.
 - Admin login, forced password change, logout, route protection, and admin API guards.
 - Prisma-backed admin dashboard, data panels, pricing controls, and promotion controls.
 - Admin invoice review controls for approve, revise, deny, cancel, mark reviewed, and incomplete-checkout cleanup.
@@ -68,6 +71,7 @@ SQUARE_PRODUCTION_LOCATION_ID="..."
 SQUARE_WEBHOOK_SIGNATURE_KEY="..."
 SQUARE_WEBHOOK_NOTIFICATION_URL="https://your-domain.com/api/square/sync"
 SQUARE_ENABLE_AFTERPAY="0"
+SQUARE_RETAINER_PLAN_VARIATION_ID="..."
 ```
 
 Analytics and seed helpers:
@@ -151,7 +155,11 @@ Every quote displays:
 - One-time project build price.
 - Optional monthly services / retainer recommendation.
 
-Retainers are optional monthly services. They are tracked separately from one-time build cost and are not charged as one-time invoice line items. If recurring billing is not configured, checkout labels selected retainers as selected for follow-up setup.
+Retainers are optional monthly services. They are tracked separately from one-time build cost and are not charged as one-time invoice line items.
+
+When a customer selects a retainer and has a saved card on file, the app attempts to create a Square subscription and links the local `Retainer` to Square with `squareSubscriptionId`, `squareCustomerId`, `squareCardId`, billing cadence, next billing date, status, failure count, and last payment state. If `SQUARE_RETAINER_PLAN_VARIATION_ID` is not configured, the local retainer remains `PENDING_SETUP` and the notification queue receives a follow-up record instead of charging incorrectly.
+
+Customers can view retainer status at `/client/retainers`. Customers and admins can cancel retainers; cancellation calls Square when a subscription ID exists and then marks the local retainer `CANCELED`.
 
 ## Admin Portal
 
@@ -181,6 +189,12 @@ Customer actions:
 - Customers with paid invoices are not hard-deleted; the admin API anonymizes and archives them.
 - Customer records support notes, tags, segments, UTM metadata, selected demo, source, landing page, referrer, consent timestamp, and opt-out state.
 
+Retainer actions:
+
+- Admin retainer cards show payment status, Square subscription status, saved-card presence, next billing, failure count, and follow-up warnings.
+- `POST /api/admin/retainers/[id]/cancel` cancels an active Square subscription when present and records an audit log.
+- Past-due subscription signals from Square create notification records for follow-up.
+
 ## Square Payments
 
 The checkout is custom and does not use Square-hosted checkout pages.
@@ -194,6 +208,18 @@ The checkout is custom and does not use Square-hosted checkout pages.
 
 Secrets such as Square access tokens and OpenAI keys are never exposed to the browser.
 
+## Saved Cards
+
+Saved cards are vaulted in Square, not in this database.
+
+- `/client/payment-methods` requires a client session.
+- The browser uses Square Web Payments SDK to tokenize card details.
+- `/api/client/payment-methods` creates or links a Square Customer, stores the Square card through the Cards API, and saves only `squareCustomerId`, `squareCardId`, card brand, last four, expiration month/year when provided by Square, billing ZIP when safely provided, and default-card state.
+- Customers can set a default card or remove a saved card. Removing a card disables it in Square and soft-disables it locally.
+- Admin can see whether a client has a saved card, but never full card details.
+- The app must never store PAN, CVV, raw card tokens, or full sensitive card data, and should not log source IDs or card tokens.
+- `/api/client/invoices/[id]/pay-remaining` verifies client ownership, reloads the invoice server-side, prevents duplicate paid balances, and charges the remaining balance using a saved Square card.
+
 ## Webhooks
 
 `/api/square/sync` receives Square webhook events.
@@ -202,6 +228,10 @@ Secrets such as Square access tokens and OpenAI keys are never exposed to the br
 - Updates local payment records and invoices.
 - Maps Square statuses to local `PaymentStatus` / `InvoiceStatus`.
 - Handles completed, pending, failed, canceled, and refunded-style state changes where Square payload data is available.
+- Handles `subscription.created`, `subscription.updated`, `subscription.canceled`, `invoice.created`, `invoice.published`, `invoice.payment_made`, failed invoice payment events, `payment.created`, `payment.updated`, and refund-style payment state updates when Square includes the relevant IDs.
+- Failed or declined retainer payments mark the retainer `PAST_DUE`, increment failure count, store a safe failure reason when available, and create a pending notification record.
+- Later successful retainer payment events move the retainer back to `ACTIVE` and create a success notification record.
+- Webhook site logs store event type and Square IDs/status only, not the full raw payload.
 
 ## Architecture Documentation
 
@@ -214,7 +244,9 @@ Data flow:
 5. `/invoices/[id]` opens a mobile-first checkout stepper.
 6. Customer reviews the invoice, approves it, selects optional retainer follow-up, enters Square card details, and pays the deposit.
 7. `/api/payments/square` validates invoice eligibility and amount server-side, stores the payment result, and updates paid invoices to `DEPOSIT_PAID`.
-8. `/api/square/sync` reconciles async Square status changes.
+8. Paid invoices can generate a client portal claim link.
+9. Authenticated clients can vault cards through Square, pay remaining balances with saved cards, and manage retainer billing.
+10. `/api/square/sync` reconciles async Square payment and retainer subscription status changes.
 
 Authentication flow:
 
@@ -315,6 +347,8 @@ Before relying on automatic Vercel deploys, verify production env values are non
 - Square payment fails: confirm access token, location ID, environment, browser domain, and deposit amount.
 - Payment returns 409: the server blocks payment for denied, revision-requested, cancelled, draft, archived, or unapproved invoices.
 - Webhook returns 401: verify `SQUARE_WEBHOOK_SIGNATURE_KEY` and notification URL.
+- Saved card fails: confirm Square customer/card vaulting credentials, environment, and card tokenization are configured; never paste raw card data into logs or env files.
+- Retainer stays pending setup: configure `SQUARE_RETAINER_PLAN_VARIATION_ID` and make sure the customer has a saved default card.
 - Afterpay is hidden: Square may not support it for the account, amount, currency, location, or environment.
 
 ## Checkout Testing
@@ -332,6 +366,10 @@ Use Square sandbox credentials in non-production environments.
 9. Confirm admin invoices show paid deposit and payment record.
 10. Confirm failed payments show a visible error and create failed payment records.
 11. Confirm denied, revision-requested, cancelled, draft, and archived invoices cannot be paid.
+12. Claim or sign in to the client portal and save a card at `/client/payment-methods`.
+13. Confirm saved cards can be set default/removed and that admin sees only safe saved-card presence.
+14. Select a retainer, save/use a card, and confirm the retainer moves to active when Square subscription configuration is available.
+15. Send a Square failure webhook and confirm the retainer becomes `PAST_DUE` with a pending notification record.
 
 ## Feature Checklist
 
@@ -350,8 +388,12 @@ Implemented:
 - Mobile-first step invoice checkout with sticky mobile action bar.
 - Square Web Payments SDK card tokenization path.
 - Server-side Square payment creation with local payment records.
+- Client portal login, claim flow, payment-method management, and saved-card vaulting through Square.
+- Saved-card remaining-balance/future invoice payment route with server-side ownership checks.
 - Server-side payment status, idempotency, duplicate deposit, and amount validation.
-- Square webhook endpoint with signature verification.
+- Square webhook endpoint with signature verification, payment reconciliation, retainer subscription updates, past-due handling, and notification records.
+- Square retainer subscription creation when a selected retainer has a saved card and plan variation configuration.
+- Client/admin retainer cancellation controls.
 - Admin session login, forced password change, and logout.
 - Admin route and API protection.
 - Admin-protected customer exports with marketing/audience filters.
@@ -365,7 +407,8 @@ Partially Implemented:
 
 - Admin CRUD is functional for pricing/promotions/customers/invoice review and data-backed for review panels, but not every module has full create/edit/delete forms.
 - Pipeline is database-backed but not drag-and-drop persisted.
-- Retainers are optional line items, but Square subscription billing is not automated.
+- Retainer subscription billing requires Square plan variation configuration and webhook coverage for the account's enabled event types.
+- Notification records are created, but production email delivery is still pending.
 - Integration settings persist but do not have a polished editing workspace.
 - Afterpay/Clearpay is wired opportunistically through Square SDK and depends on account/location eligibility.
 
@@ -373,7 +416,7 @@ Planned:
 
 - Full admin CRUD forms for every module.
 - AI quote approval/editing screen with staff overrides.
-- Client portal login and project-progress views.
+- Client portal project-progress views beyond payment methods and retainers.
 - File upload/media management.
 - Task assignment workflow UI.
 - Production notification emails.
@@ -385,7 +428,7 @@ Technical Debt:
 
 - Production `build` currently runs `prisma db push`; migration-only deploys are safer.
 - Public invoice URLs rely on unguessable invoice IDs rather than separate signed client tokens.
-- Payment idempotency is stored in metadata rather than a dedicated database column.
+- Payment idempotency uses a dedicated `PaymentRecord.idempotencyKey`; more granular Square idempotency lifecycle tooling can still be added.
 - Some admin modules summarize data rather than providing full management workspaces.
 - `npm audit` reports inherited dependency vulnerabilities; review dependency upgrades separately because force-fixing may introduce breaking framework changes.
 - Local development requires a reachable PostgreSQL database; no SQLite fallback is configured.
@@ -402,22 +445,24 @@ Production Ready:
 - Admin invoice/customer action APIs with audit logs.
 - Server-side pricing validation.
 - Square card payment path when environment variables are configured.
+- Client saved-card vaulting and saved-card balance payments.
+- Retainer subscription status tracking and cancellation when Square subscription configuration is present.
 
 Beta:
 
 - AI quote assistant.
 - Pricing and promotions management.
-- Optional retainer checkout line items.
 - Square webhook reconciliation.
 - Admin dashboard and review panels.
 - Marketing/customer metadata capture and export filters.
+- Client portal payment methods and retainer billing views.
 
 In Development:
 
 - Full admin CRUD across every operational module.
 - Rich AI quote review and override tooling.
-- Retainer subscription billing; current checkout records retainer selection for follow-up setup instead of charging it as a recurring subscription.
-- Client portal.
+- Full client portal project-progress/file workflows.
+- Production notification email delivery for pending notification records.
 
 Planned:
 
@@ -446,6 +491,8 @@ Planned:
 - Added visible invoice and customer action buttons in the admin portal.
 - Protected customer export API with admin auth and added audience filters.
 - Ran `npm install`, `npm ci`, `prisma generate`, `npm run build`, and `npx tsc --noEmit`.
+- Added Square-vaulted saved cards, client payment methods, saved-card remaining-balance payments, and safe admin saved-card visibility.
+- Added Square retainer subscription linkage, webhook-driven active/past-due/canceled status updates, pending notification records, and client/admin retainer cancellation controls.
 
 2026-06-28:
 

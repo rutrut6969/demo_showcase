@@ -155,10 +155,13 @@ model Client {
   archivedAt        DateTime?
   deletedAt         DateTime?
   anonymizedAt      DateTime?
+  squareCustomerId  String?
   projectRequests   ProjectRequest[]
   projects          Project[]
   invoices          Invoice[]
   retainers         Retainer[]
+  clientUsers       ClientUser[]
+  savedPaymentMethods SavedPaymentMethod[]
   mediaAssets       MediaAsset[]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
@@ -169,6 +172,55 @@ model Client {
   @@index([source])
   @@index([selectedDemo])
   @@index([archivedAt])
+  @@index([squareCustomerId])
+}
+
+model ClientUser {
+  id             String   @id @default(cuid())
+  clientId       String
+  client         Client   @relation(fields: [clientId], references: [id])
+  email          String   @unique
+  passwordHash   String
+  emailVerifiedAt DateTime?
+  lastLoginAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([clientId])
+}
+
+model ClientPortalInvite {
+  id          String   @id @default(cuid())
+  clientId    String
+  invoiceId   String?
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([clientId])
+  @@index([invoiceId])
+}
+
+model SavedPaymentMethod {
+  id              String   @id @default(cuid())
+  clientId        String
+  client          Client   @relation(fields: [clientId], references: [id])
+  squareCustomerId String
+  squareCardId    String   @unique
+  brand           String?
+  last4           String
+  expMonth        Int?
+  expYear         Int?
+  billingZip      String?
+  defaultCard     Boolean  @default(false)
+  disabledAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([defaultCard])
+  @@index([disabledAt])
 }
 
 model ProjectRequest {
@@ -338,6 +390,7 @@ model PaymentRecord {
   idempotencyKey  String?
   squarePaymentId String?
   squareOrderId   String?
+  squareCardId    String?
   paymentMethod   String?
   metadata        Json?
   createdAt       DateTime      @default(now())
@@ -357,13 +410,42 @@ model Retainer {
   includedServices   String[]
   billingCycle       String        @default("monthly")
   paymentStatus      PaymentStatus @default(PENDING)
+  subscriptionStatus String        @default("PENDING_SETUP")
   hostingStatus      String?
   managedDomains     String[]
   maintenanceNotes   String?
   renewalDate        DateTime?
   squareSubscriptionId String?
+  squareCustomerId   String?
+  squareCardId       String?
+  nextBillingDate    DateTime?
+  failedPaymentCount Int           @default(0)
+  lastPaymentStatus  String?
+  lastFailureReason  String?
+  canceledAt         DateTime?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
+
+  @@index([subscriptionStatus])
+  @@index([squareSubscriptionId])
+}
+
+model NotificationRecord {
+  id          String    @id @default(cuid())
+  clientId    String?
+  email       String?
+  type        String
+  status      String    @default("PENDING")
+  subject     String
+  body        String
+  metadata    Json?
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+  @@index([type])
 }
 
 model Project {

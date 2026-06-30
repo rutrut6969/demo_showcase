@@ -30,7 +30,7 @@ export async function getAdminPortalData() {
     pricingRules: defaultPricingRules.map((rule) => ({ key: rule.key, label: rule.label, basePrice: formatCents(rule.basePrice), minPrice: formatCents(rule.minPrice), retainer: rule.retainerMin ? `${formatCents(rule.retainerMin)}/month` : "Custom", active: "Yes" })),
     promotions: [] as Array<Record<string, string>>,
     projects: [] as Array<Record<string, string>>,
-    retainers: retainerTiers.map((tier) => ({ name: tier.name, price: tier.price, status: "Configured plan", client: "Template", renewal: "N/A" })),
+    retainers: retainerTiers.map((tier) => ({ id: tier.name, name: tier.name, price: tier.price, status: "Configured plan", subscription: "Template", client: "Template", renewal: "N/A", card: "No", failed: "0", followUp: "-" })),
     demos: demoTemplates.map((demo) => ({ slug: demo.slug, name: demo.name, category: demo.type, visible: "Yes", package: demo.recommendedPackage, complexity: label(demo.complexity) })),
     analytics: [] as Array<Record<string, string>>,
     settings: [] as Array<Record<string, string>>,
@@ -62,7 +62,7 @@ export async function getAdminPortalData() {
       paidDepositCount
     ] = await Promise.all([
       prisma.projectRequest.findMany({ take: 50, orderBy: { createdAt: "desc" }, include: { client: true, aiQuote: true, invoices: { include: { payments: true } } } }),
-      prisma.client.findMany({ take: 50, where: { deletedAt: null }, orderBy: { createdAt: "desc" }, include: { projectRequests: true, invoices: { include: { payments: true } }, projects: true, retainers: true } }),
+      prisma.client.findMany({ take: 50, where: { deletedAt: null }, orderBy: { createdAt: "desc" }, include: { projectRequests: true, invoices: { include: { payments: true } }, projects: true, retainers: true, savedPaymentMethods: { where: { disabledAt: null } } } }),
       prisma.invoice.findMany({ take: 50, where: { archivedAt: null }, orderBy: { createdAt: "desc" }, include: { client: true, request: true, payments: true, lineItems: true } }),
       prisma.paymentRecord.findMany({ take: 50, orderBy: { createdAt: "desc" }, include: { invoice: { include: { client: true, request: true } } } }),
       prisma.pricingRule.findMany({ take: 50, orderBy: { sortOrder: "asc" } }),
@@ -77,7 +77,7 @@ export async function getAdminPortalData() {
       prisma.aIQuote.count(),
       prisma.projectRequest.count({ where: { status: { in: ["NEW", "AI_QUOTED", "UNDER_REVIEW", "ADMIN_REVIEW_REQUESTED"] } } }),
       prisma.projectRequest.count({ where: { status: { in: ["AI_QUOTED", "UNDER_REVIEW", "ADMIN_REVIEW_REQUESTED", "CLIENT_ACCEPTED_ESTIMATE"] } } }),
-      prisma.retainer.count({ where: { paymentStatus: "PAID" } }),
+      prisma.retainer.count({ where: { subscriptionStatus: "ACTIVE" } }),
       prisma.paymentRecord.count({ where: { status: "PAID" } })
     ]);
 
@@ -116,7 +116,8 @@ export async function getAdminPortalData() {
         requests: String(client.projectRequests.length),
         invoices: String(client.invoices.length),
         paid: client.invoices.some((invoice) => invoice.payments.some((payment) => payment.status === "PAID")) ? "Yes" : "No",
-        retainer: client.retainers.some((retainer) => retainer.paymentStatus === "PAID") ? "Yes" : "No",
+        retainer: client.retainers.some((retainer) => retainer.subscriptionStatus === "ACTIVE" || retainer.paymentStatus === "PAID") ? "Yes" : "No",
+        savedCard: client.savedPaymentMethods.length ? "Yes" : "No",
         projects: String(client.projects.length),
         consent: client.marketingConsent && !client.marketingOptOut ? "Yes" : "No",
         optOut: client.marketingOptOut ? "Yes" : "No",
@@ -179,11 +180,16 @@ export async function getAdminPortalData() {
       })),
       retainers: retainers.length
         ? retainers.map((retainer) => ({
+            id: retainer.id,
             name: retainer.tier,
             price: money(retainer.monthlyAmount),
             status: label(retainer.paymentStatus),
+            subscription: label(retainer.subscriptionStatus),
             client: retainer.client.businessName || retainer.client.name,
-            renewal: retainer.renewalDate?.toLocaleDateString() || "N/A"
+            renewal: retainer.nextBillingDate?.toLocaleDateString() || retainer.renewalDate?.toLocaleDateString() || "N/A",
+            card: retainer.squareCardId ? "Saved card" : "No saved card",
+            failed: String(retainer.failedPaymentCount),
+            followUp: retainer.lastFailureReason || (retainer.subscriptionStatus === "PENDING_SETUP" ? "Subscription setup pending" : "-")
           }))
         : empty.retainers,
       demos: demos.length

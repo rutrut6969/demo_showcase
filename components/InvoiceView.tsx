@@ -68,7 +68,11 @@ declare global {
     Square?: {
       payments(applicationId: string, locationId: string): {
         card(): Promise<{ attach(selector: string): Promise<void>; tokenize(): Promise<{ status: string; token?: string; errors?: Array<{ message?: string }> }> }>;
-        afterpayClearpay?: (options: { amount: string; currencyCode: string }) => Promise<{ attach(selector: string): Promise<void>; tokenize(): Promise<{ status: string; token?: string; errors?: Array<{ message?: string }> }> }>;
+        afterpayClearpay?: (options: { amount: string; currencyCode: string; countryCode?: string }) => Promise<{
+          attach(selector: string): Promise<void>;
+          tokenize(): Promise<{ status: string; token?: string; errors?: Array<{ message?: string }> }>;
+          destroy?(): Promise<void>;
+        }>;
       };
     };
   }
@@ -90,6 +94,7 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [selectedRetainer, setSelectedRetainer] = useState(Boolean(sampleInvoice.retainerSelected));
   const [paidAmount, setPaidAmount] = useState<number | null>(null);
+  const [claimUrl, setClaimUrl] = useState<string | null>(null);
   const paymentSectionRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<{ tokenize(): Promise<{ status: string; token?: string; errors?: Array<{ message?: string }> }> } | null>(null);
   const afterpayRef = useRef<{ tokenize(): Promise<{ status: string; token?: string; errors?: Array<{ message?: string }> }> } | null>(null);
@@ -271,6 +276,7 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
     }
     setStatus("DEPOSIT_PAID");
     setPaidAmount(data.amount || invoice.depositDue);
+    setClaimUrl(data.claimUrl || null);
     setPaymentMessage(data.alreadyPaid ? "This deposit was already paid." : "Deposit payment completed successfully.");
     moveToStep("CONFIRMATION");
   }
@@ -374,7 +380,7 @@ export function InvoiceView({ invoiceId }: { invoiceId: string }) {
               </div>
             ) : null}
 
-            {checkoutStep === "CONFIRMATION" ? <ConfirmationStep invoice={invoice} paidAmount={paidAmount || invoice.depositDue} selectedRetainer={selectedRetainer} /> : null}
+            {checkoutStep === "CONFIRMATION" ? <ConfirmationStep invoice={invoice} paidAmount={paidAmount || invoice.depositDue} selectedRetainer={selectedRetainer} claimUrl={claimUrl} /> : null}
           </div>
 
           <aside className="min-w-0 space-y-4">
@@ -642,7 +648,7 @@ function PaymentStep({
   );
 }
 
-function ConfirmationStep({ invoice, paidAmount, selectedRetainer }: { invoice: InvoicePayload; paidAmount: number; selectedRetainer: boolean }) {
+function ConfirmationStep({ invoice, paidAmount, selectedRetainer, claimUrl }: { invoice: InvoicePayload; paidAmount: number; selectedRetainer: boolean; claimUrl: string | null }) {
   return (
     <div className="rounded-lg border border-emerald-200 bg-white p-4 shadow-sm sm:p-8">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
@@ -660,6 +666,11 @@ function ConfirmationStep({ invoice, paidAmount, selectedRetainer }: { invoice: 
         <p className="mt-2">Obsidian Systems will review the approved scope, confirm any remaining details, and follow up about the production schedule.</p>
         {selectedRetainer ? <p className="mt-2">Your optional retainer selection is saved for follow-up setup and was not charged as a one-time build cost.</p> : null}
       </div>
+      {claimUrl ? (
+        <Link href={claimUrl} className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-emerald-400 sm:w-auto">
+          Create client portal account
+        </Link>
+      ) : null}
       <Link href="/" className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 sm:w-auto">
         Back to homepage
       </Link>
