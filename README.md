@@ -371,6 +371,85 @@ Use Square sandbox credentials in non-production environments.
 14. Select a retainer, save/use a card, and confirm the retainer moves to active when Square subscription configuration is available.
 15. Send a Square failure webhook and confirm the retainer becomes `PAST_DUE` with a pending notification record.
 
+## Production Architecture Pass Roadmap
+
+This section preserves the large production architecture pass as a step-by-step continuation plan. The two attached pass files from June 29, 2026 were identical, so they are tracked here as one consolidated pass.
+
+### Pass Steps
+
+1. Homepage restructure: split public work into Live Production Websites and Showcase Demos, add filters, remove K&K from internal demos, and link real client sites directly.
+2. AI consultant modal redesign: replace the current quote modal with a mobile-first guided consultation with six steps, progress, saved progress, and demo-aware defaults.
+3. AI consultant system: keep pricing server-controlled while AI acts as a sales consultant, scope advisor, risk reviewer, and phased implementation guide.
+4. AI processing experience: make submission feel alive with duplicate-submit protection, progress messaging, retry, preserved data, delayed-state messaging, and fallback consultation.
+5. Pricing rules: keep minimum pricing, typical package floors, promotions, and final pricing authority on the server.
+6. Budget awareness: when requested scope exceeds budget, show full, budget, and phased options with deferrable features.
+7. Payment options: support deposits, payment plans, Afterpay/Clearpay when eligible, future financing, and phased development messaging.
+8. Retainer simplification: keep the default $200/month retainer, support promotional retainers, and keep retainers optional.
+9. Saved payment methods: vault cards in Square and store only Square customer/card IDs plus safe card metadata.
+10. Client portal: support account claim/login, invoices, payments, remaining balance, retainer status, saved cards, project status, timeline, and support requests.
+11. Invoice timeline: track and show invoice/project/retainer milestones to admin and customer.
+12. Remaining balance workflow: let admin create/copy/email balance payment links and let customers pay early or after completion.
+13. Retainer subscriptions: use Square subscriptions with monthly billing, failed payment tracking, cancellation, and notifications.
+14. Sandbox cleanup: let Super Admin purge paid invoices, payments, customers, and test data only in sandbox; never hard-delete paid production records.
+15. Dashboard improvements: make dashboard cards clickable and route users into the proper module/filter.
+16. Remove placeholders: implement or hide non-functional admin tabs and remove dead buttons.
+17. Production hardening: run `npm ci`, `npm run lint`, `npx prisma validate`, `npx prisma generate`, `npx tsc --noEmit`, and `npm run build`.
+18. README upkeep: keep features, changelog, architecture, pricing, retainers, AI, checkout, portal, roadmap, and technical debt current after each pass.
+
+### Completed In This Repo
+
+- Server-controlled pricing is implemented in `lib/pricing.ts` and `lib/pricing-config.ts`; AI quote output does not determine final pricing.
+- Minimum and typical package pricing floors are represented in shared pricing config and database-backed `PricingRule` records.
+- Promotions can override build and retainer pricing through the `Promotion` model and admin Pricing & Promotions module.
+- Request capture stores contact details, business type, selected demo metadata, desired features, budget range, timeline, notes, marketing consent, UTM fields, landing page, referrer, device info, and browser info.
+- Demo-launched quote requests already pass selected demo, demo category, recommended package, source page, and estimated complexity into the request modal.
+- AI quote generation has an OpenAI path plus deterministic fallback, stores quotes in `AIQuote`, and keeps manual review notes.
+- AI quote submission disables duplicate submit through loading state and falls back instead of leaving the customer on a blank/frozen page.
+- Deposit checkout is implemented as a mobile-first invoice flow with review, approval, payment, and confirmation steps.
+- Square Web Payments SDK tokenization is implemented for deposit checkout.
+- Server-side payment validation reloads invoices, blocks denied/revision/cancelled/draft/archived/unapproved invoices, validates deposit amounts, stores idempotency keys, and prevents duplicate paid deposits.
+- Afterpay/Clearpay rendering is wired opportunistically through Square SDK when account/location/amount eligibility allows it.
+- Retainers are optional, separated from one-time build totals, and currently default through the pricing system at the $200/month tier when applicable.
+- Saved payment methods are implemented in `/client/payment-methods`; Square vaults cards and the app stores only Square IDs plus safe metadata such as brand, last four, expiration month/year, billing ZIP, and default-card state.
+- Customers can save, remove, and set default cards from the client portal.
+- Client account claim/login exists through `ClientPortalInvite`, `ClientUser`, `/client/login`, and `/api/client/claim`.
+- Remaining balance payment by saved card exists at `/api/client/invoices/[id]/pay-remaining` with client ownership checks.
+- Retainer subscription records include Square subscription/customer/card IDs, monthly amount, billing cycle, next billing date, status, failed payment count, last payment status, failure reason, and cancellation timestamp.
+- Retainer subscription creation is attempted when a selected retainer has a saved card and `SQUARE_RETAINER_PLAN_VARIATION_ID` is configured.
+- Square webhook sync updates payment records, invoice state, retainer active/past-due/canceled state, failed payment counts, and pending notification records.
+- Client retainer status and cancellation are available at `/client/retainers`.
+- Admin retainer status and cancellation are available in the Retainers panel and `/api/admin/retainers/[id]/cancel`.
+- Production delete safety exists for incomplete invoice cleanup; paid invoices are protected from hard delete in normal admin cleanup.
+- Admin invoice review actions exist for approve, revise, deny, cancel, mark reviewed, and delete/archive incomplete checkout.
+- Admin customer management exists for view/list, edit, archive, delete when safe, anonymize paid-history customers, notes, tags, segments, source, consent, and opt-out state.
+- Admin customer exports are protected by admin authentication and support audience filters.
+- README is already treated as the source of truth and has current sections for features, architecture, pricing, retainers, checkout, portal, roadmap/status, technical debt, and changelog.
+
+### Incomplete Or Needs A Focused Future Pass
+
+- Homepage restructure is not complete. The current homepage has a single Featured Projects area and a separate demo preview, but it does not split into filterable Live Production Websites and Showcase Demos.
+- K&K Kustom Kreations is still represented as the internal `crafted-commerce` demo/featured project instead of a Live Production Website linked directly to the actual client website.
+- Public homepage filters for All, Production Websites, and Showcase Demos do not exist.
+- Showcase cards do not consistently expose both `View Demo` and `Request Similar Website` actions in the homepage structure requested by the pass.
+- The quote modal is not yet the requested six-step guided AI consultation. It is a single modal form with contact, business, budget, timeline, features, notes, and quote preview.
+- Consultation progress indicator, step navigation, save-progress behavior, and form-resume behavior are not implemented.
+- Website type selection does not yet include the full requested dropdown list, and demo-specific recommended features are not pre-selected.
+- AI system prompt still frames the model as generating conservative project estimates rather than the full senior solutions consultant prompt with risks, budget concerns, phased plans, and financing recommendations.
+- Budget-aware output is incomplete. The current quote returns one recommended estimate rather than distinct full solution, budget solution, and phased solution options when the budget is too low.
+- AI processing UX is partial. There is loading state and fallback, but not rotating loading messages, animated progress bar, step indicator, 10-30 second expectation text, delayed-state message, or explicit retry flow.
+- Payment plan and future financing messaging are not fully modeled in quote output, checkout, or admin workflows.
+- Client portal is partial. It currently covers login/claim, saved cards, retainer status, and saved-card balance payment APIs, but not a full portal dashboard with invoice list, project status, timeline, file sharing, invoice downloads, or support requests.
+- Invoice timeline is incomplete. The schema has timestamps for created/viewed/approved/reviewed/cancelled/archived and payment records, but there is no unified customer/admin timeline for created, viewed, approved, deposit paid, project started, balance sent, final payment, retainer activated, and retainer canceled.
+- Remaining balance admin workflow is incomplete. The customer payment API exists, but admin cannot yet create/copy/email a remaining-balance payment link from the panel.
+- Retainer subscriptions are partial. Square subscription creation and webhook status tracking exist, but full recurring billing verification, retry/update-payment-method workflows, and production email notifications are not complete.
+- Notification records exist, but actual customer email delivery for retainer start, payment success, payment failure, past due, and cancellation is not implemented.
+- Sandbox cleanup is incomplete. There is no Super Admin-only sandbox purge tool for paid invoices, payments, customers, or full test data cleanup.
+- Dashboard cards are not clickable and do not open modules with filters applied.
+- Placeholder/admin module cleanup is incomplete. Several modules still render summary or placeholder surfaces through `GenericModule`, especially proposals, marketing, media, devices, tasks, client portal, case studies, and portions of feature toggles/AI control.
+- Some admin buttons still perform broad refreshes after actions rather than targeted state updates.
+- `npm run build` is environment-dependent because it starts with `prisma db push` and requires a populated `DATABASE_URL`; migration-only production deployment remains technical debt.
+- Automated route/payment/webhook tests are still planned rather than implemented.
+
 ## Feature Checklist
 
 Implemented:
@@ -493,6 +572,7 @@ Planned:
 - Ran `npm install`, `npm ci`, `prisma generate`, `npm run build`, and `npx tsc --noEmit`.
 - Added Square-vaulted saved cards, client payment methods, saved-card remaining-balance payments, and safe admin saved-card visibility.
 - Added Square retainer subscription linkage, webhook-driven active/past-due/canceled status updates, pending notification records, and client/admin retainer cancellation controls.
+- Added a Production Architecture Pass Roadmap that records completed and incomplete pass items so future work can be tackled one focused slice at a time.
 
 2026-06-28:
 
