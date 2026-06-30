@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Download, GripVertical, Menu, Plus, Shield, X } from "lucide-react";
 import type { RoleName } from "@prisma/client";
@@ -300,6 +300,11 @@ function CrmPanel({ data, actionToken }: { data: AdminPortalData; actionToken: s
 function InvoicesPanel({ data, actionToken }: { data: AdminPortalData; actionToken: string }) {
   const [status, setStatus] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [invoices, setInvoices] = useState(data.invoices);
+
+  useEffect(() => {
+    setInvoices(data.invoices);
+  }, [data.invoices]);
 
   async function invoiceAction(invoiceId: string, action: string) {
     setSavingId(invoiceId);
@@ -316,9 +321,25 @@ function InvoicesPanel({ data, actionToken }: { data: AdminPortalData; actionTok
         window.location.href = "/admin/login?error=session";
         return;
       }
-      if (!response.ok) throw new Error((await response.json().catch(() => null))?.error || "Invoice action failed");
-      setStatus("Invoice action saved. Refreshing admin data...");
-      window.location.reload();
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.error || "Invoice action failed");
+
+      if (result?.deleted || result?.archived || action === "delete_incomplete") {
+        setInvoices((current) => current.filter((invoice) => invoice.id !== invoiceId));
+        setStatus(result?.archived ? "Incomplete invoice archived. You are still signed in." : "Incomplete invoice deleted. You are still signed in.");
+        return;
+      }
+
+      setInvoices((current) => current.map((invoice) => {
+        if (invoice.id !== invoiceId) return invoice;
+        return {
+          ...invoice,
+          status: invoiceActionStatus(action, invoice.status),
+          reviewed: action === "mark_reviewed" ? "Just now" : invoice.reviewed,
+          canDeleteIncomplete: action === "cancel" ? "Yes" : invoice.canDeleteIncomplete
+        };
+      }));
+      setStatus("Invoice action saved.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Invoice action failed");
     } finally {
@@ -328,11 +349,11 @@ function InvoicesPanel({ data, actionToken }: { data: AdminPortalData; actionTok
 
   return (
     <div className="space-y-5">
-      <ResponsiveTable title="Square-backed invoices" headers={["Invoice", "Client", "Status", "Total", "Deposit", "Paid", "Retainer", "Reviewed"]} rows={data.invoices.map((invoice) => [invoice.invoice, invoice.client, invoice.status, invoice.total, invoice.deposit, invoice.paid, invoice.retainer, invoice.reviewed])} />
+      <ResponsiveTable title="Square-backed invoices" headers={["Invoice", "Client", "Status", "Total", "Deposit", "Paid", "Retainer", "Reviewed"]} rows={invoices.map((invoice) => [invoice.invoice, invoice.client, invoice.status, invoice.total, invoice.deposit, invoice.paid, invoice.retainer, invoice.reviewed])} />
       <DataPanel title="Invoice review controls">
         {status ? <p className="mb-3 rounded-lg border border-white/10 bg-white/8 p-3 text-sm text-slate-200">{status}</p> : null}
         <div className="grid gap-3">
-          {data.invoices.map((invoice) => (
+          {invoices.map((invoice) => (
             <div key={invoice.id} className="rounded-lg border border-white/10 bg-white/6 p-4">
               <div className="grid gap-3 xl:grid-cols-[1fr_auto] xl:items-start">
                 <div>
@@ -369,6 +390,17 @@ function InvoicesPanel({ data, actionToken }: { data: AdminPortalData; actionTok
       </DataPanel>
     </div>
   );
+}
+
+function invoiceActionStatus(action: string, fallback: string) {
+  const labels: Record<string, string> = {
+    approve: "Approved",
+    revise: "Revision Requested",
+    deny: "Denied",
+    cancel: "Cancelled",
+    mark_reviewed: "Admin Reviewed"
+  };
+  return labels[action] || fallback;
 }
 
 function RetainersPanel({ data }: { data: AdminPortalData }) {
