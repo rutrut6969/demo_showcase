@@ -16,8 +16,9 @@ The private admin portal is protected by the `obsidian_session` cookie and loads
 - AI-assisted quote generation with deterministic fallback.
 - Central cents-only pricing rules used by homepage, AI quotes, promotions, checkout, and admin controls.
 - Optional monthly retainer recommendations separated from one-time build pricing.
-- Estimate acceptance creates invoices with build, optional retainer, and deposit line items.
-- Custom Square Web Payments SDK card checkout.
+- Estimate acceptance creates invoices with project build line items, separate deposit due, and separate optional retainer metadata.
+- Mobile-first step checkout: review, approval, payment, and confirmation.
+- Custom Square Web Payments SDK card checkout that activates only after invoice approval.
 - Optional Afterpay/Clearpay rendering when Square reports support.
 - Square webhook endpoint with signature verification and local status updates.
 - Admin login, forced password change, logout, route protection, and admin API guards.
@@ -150,7 +151,7 @@ Every quote displays:
 - One-time project build price.
 - Optional monthly services / retainer recommendation.
 
-Retainers are not automatically included. The customer must select build + retainer in the quote UI before checkout includes the monthly retainer line item.
+Retainers are optional monthly services. They are tracked separately from one-time build cost and are not charged as one-time invoice line items. If recurring billing is not configured, checkout labels selected retainers as selected for follow-up setup.
 
 ## Admin Portal
 
@@ -170,6 +171,7 @@ Invoice actions:
 - `POST /api/admin/invoices/[id]/action` handles approve, revise, deny, cancel, mark reviewed, and delete/archive incomplete checkout.
 - Paid invoices cannot be deleted from the cleanup control.
 - Invoices with payment history but no paid deposit are archived/cancelled instead of hard-deleted.
+- Admin invoice rows show invoice status, deposit paid amount, failed payment records, review state, and selected retainer follow-up details.
 - Invoice actions write `AuditLog` records.
 
 Customer actions:
@@ -184,10 +186,11 @@ Customer actions:
 The checkout is custom and does not use Square-hosted checkout pages.
 
 - `/api/payments/square` `GET` returns only public Square config: environment, application ID, location ID, and Afterpay enablement.
-- The invoice page loads Square Web Payments SDK.
+- The invoice page loads Square Web Payments SDK only after the invoice enters the payment step.
 - The browser tokenizes card details and sends the token to `/api/payments/square`.
-- The server reloads the invoice, validates the deposit amount, creates the Square payment, stores `PaymentRecord`, and updates invoice status.
-- Idempotency keys are sent to Square and stored in payment metadata.
+- The server reloads the invoice, verifies the invoice is approved and not archived/cancelled/denied/revision-requested, validates the deposit amount, creates the Square payment, stores `PaymentRecord`, and updates invoice status to `DEPOSIT_PAID`.
+- Idempotency keys are sent to Square, stored on `PaymentRecord`, and checked before retrying duplicate payment attempts.
+- Failed Square attempts are stored as failed payment records while the invoice remains approved for retry.
 
 Secrets such as Square access tokens and OpenAI keys are never exposed to the browser.
 
@@ -207,10 +210,11 @@ Data flow:
 1. Visitor submits `RequestQuoteModal`.
 2. `/api/requests` validates input, upserts `Client`, stores marketing/source metadata, creates `ProjectRequest`, resolves server pricing, generates/saves `AIQuote`, and logs analytics.
 3. Quote UI displays one-time build and optional retainer separately.
-4. `/api/checkout/accept-estimate` ignores client totals, reloads server quote/pricing, creates `Invoice` and `InvoiceLineItem` records, and increments promotion usage.
-5. `/invoices/[id]` displays the invoice and Square checkout.
-6. `/api/payments/square` validates invoice amount and stores the payment result.
-7. `/api/square/sync` reconciles async Square status changes.
+4. `/api/checkout/accept-estimate` ignores client totals, reloads server quote/pricing, creates `Invoice` and project-build `InvoiceLineItem` records, stores deposit due separately, stores optional retainer metadata separately, and increments promotion usage.
+5. `/invoices/[id]` opens a mobile-first checkout stepper.
+6. Customer reviews the invoice, approves it, selects optional retainer follow-up, enters Square card details, and pays the deposit.
+7. `/api/payments/square` validates invoice eligibility and amount server-side, stores the payment result, and updates paid invoices to `DEPOSIT_PAID`.
+8. `/api/square/sync` reconciles async Square status changes.
 
 Authentication flow:
 
@@ -264,9 +268,9 @@ Public and checkout:
 - `POST /api/checkout/accept-estimate` creates an invoice from a server-validated estimate.
 - `POST /api/checkout/manual-review` flags a request for manual review.
 - `GET /api/invoices/[id]` returns invoice data.
-- `POST /api/invoices/[id]/respond` stores approve/revise/deny responses.
+- `POST /api/invoices/[id]/respond` stores approve/revise/deny responses and returns `{ ok, invoice, nextStep, message }`.
 - `GET /api/payments/square` returns frontend-safe Square config.
-- `POST /api/payments/square` processes a tokenized Square payment.
+- `POST /api/payments/square` processes a tokenized Square payment only for approved, non-archived invoices.
 - `POST /api/square/sync` processes Square webhook events.
 
 Admin:
@@ -293,6 +297,8 @@ npm run build
 
 Production must provide `DATABASE_URL`, `AUTH_SECRET`, Square variables, and `NEXT_PUBLIC_APP_URL`. Run `npm run prisma:deploy` for migration-based deployments. The current script still includes `prisma db push`; treat that as temporary technical debt.
 
+Before relying on automatic Vercel deploys, verify production env values are non-empty in Vercel. The build requires `DATABASE_URL` because `npm run build` runs `prisma db push` before `next build`.
+
 ## Troubleshooting
 
 - Admin login fails: run `npm run db:seed`, confirm `DATABASE_URL`, and use the generated temporary password.
@@ -304,10 +310,28 @@ Production must provide `DATABASE_URL`, `AUTH_SECRET`, Square variables, and `NE
 - AI quote uses fallback: set `OPENAI_API_KEY`; otherwise fallback quote mode is expected.
 - Quote price seems wrong: check active `PricingRule` and `Promotion` records first.
 - Promotion does not apply: confirm active status, dates, and remaining `maxUses`.
-- Square form does not appear: set application/location IDs for the selected Square environment.
+- Square form does not appear before approval: expected behavior. The Square SDK loads only after the invoice is approved and the checkout enters the payment step.
+- Square form does not appear after approval: set application/location IDs for the selected Square environment and confirm the invoice status is `APPROVED`.
 - Square payment fails: confirm access token, location ID, environment, browser domain, and deposit amount.
+- Payment returns 409: the server blocks payment for denied, revision-requested, cancelled, draft, archived, or unapproved invoices.
 - Webhook returns 401: verify `SQUARE_WEBHOOK_SIGNATURE_KEY` and notification URL.
 - Afterpay is hidden: Square may not support it for the account, amount, currency, location, or environment.
+
+## Checkout Testing
+
+Use Square sandbox credentials in non-production environments.
+
+1. Generate a quote from a demo request.
+2. Accept the estimate and confirm redirect to `/invoices/[id]`.
+3. Review the mobile invoice summary.
+4. Continue to approval and approve the invoice.
+5. Confirm the UI moves to the payment step and scrolls the payment section into view.
+6. Confirm the Square card form initializes.
+7. Pay the deposit with a Square sandbox card.
+8. Confirm the invoice moves to the confirmation screen and status becomes `DEPOSIT_PAID`.
+9. Confirm admin invoices show paid deposit and payment record.
+10. Confirm failed payments show a visible error and create failed payment records.
+11. Confirm denied, revision-requested, cancelled, draft, and archived invoices cannot be paid.
 
 ## Feature Checklist
 
@@ -322,11 +346,11 @@ Implemented:
 - Optional retainer display and checkout inclusion.
 - Quote persistence to database.
 - Estimate acceptance creating local invoices.
-- Client invoice response persistence.
-- Custom invoice page.
+- Client invoice response persistence with explicit next-step response shape.
+- Mobile-first step invoice checkout with sticky mobile action bar.
 - Square Web Payments SDK card tokenization path.
 - Server-side Square payment creation with local payment records.
-- Server-side payment amount validation.
+- Server-side payment status, idempotency, duplicate deposit, and amount validation.
 - Square webhook endpoint with signature verification.
 - Admin session login, forced password change, and logout.
 - Admin route and API protection.
@@ -392,7 +416,7 @@ In Development:
 
 - Full admin CRUD across every operational module.
 - Rich AI quote review and override tooling.
-- Retainer subscription billing.
+- Retainer subscription billing; current checkout records retainer selection for follow-up setup instead of charging it as a recurring subscription.
 - Client portal.
 
 Planned:
@@ -406,6 +430,12 @@ Planned:
 
 2026-06-29:
 
+- Reworked invoice checkout into a mobile-first stepper: review, approval, payment, and confirmation.
+- Approval now returns a clean next-step response, shows loading/error states, and advances the customer directly into payment.
+- Square Web Payments now loads only in the active payment step and the payment API blocks unapproved, denied, revision-requested, cancelled, draft, and archived invoices.
+- Added payment idempotency storage and duplicate paid deposit detection.
+- Separated project total, deposit due today, remaining balance, and optional retainer follow-up so deposit/retainer do not inflate one-time build totals.
+- Added invoice retainer selection fields and admin visibility for selected retainer follow-up.
 - Confirmed `Invoice.projectId` is singular in `prisma/schema.prisma`; regenerated Prisma Client successfully.
 - Added customer marketing metadata fields, archive/delete/anonymize timestamps, tags, segments, and opt-out tracking.
 - Added request-level UTM, landing page, referrer, device, and browser capture.
@@ -431,5 +461,7 @@ Planned:
 
 Breaking / deployment notes:
 
+- Run Prisma generate and push/deploy schema before using the new checkout fields: `Invoice.retainerSelected`, `Invoice.retainerTier`, `Invoice.retainerMonthlyAmount`, and `PaymentRecord.idempotencyKey`.
+- Confirm Vercel production env values are populated before deploy. Empty `DATABASE_URL` or `AUTH_SECRET` will block builds or admin auth.
 - Run Prisma generate and push/deploy schema before using the new pricing and promotion tables.
 - Existing AI quotes may not have the new optional pricing fields populated.

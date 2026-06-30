@@ -31,5 +31,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
     }
   }).catch(() => undefined);
 
-  return NextResponse.json({ invoice });
+  const approved = body.status === "APPROVED";
+
+  return NextResponse.json({
+    ok: true,
+    invoice,
+    nextStep: approved ? "PAYMENT" : "CLOSED",
+    message: approved ? "Invoice approved. Continue to secure deposit payment." : "Your response has been saved."
+  });
 }

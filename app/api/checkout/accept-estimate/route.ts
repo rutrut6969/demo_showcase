@@ -58,14 +58,14 @@ export async function POST(request: Request) {
 
     const buildPrice = Math.max(MINIMUM_PROJECT_PRICE, serverPricing.buildPrice);
     const retainerPrice = body.includeRetainer && serverPricing.retainerPrice ? serverPricing.retainerPrice : null;
-    const total = buildPrice + (retainerPrice || 0);
+    const total = buildPrice;
     const depositDue = Math.max(50000, Math.round(buildPrice * 0.25));
 
     const scopeBreakdown = [
       body.quote.scopeSummary,
       `Recommended package: ${body.quote.recommendedPackage}`,
       `One-time build price: ${formatMoney(buildPrice)}`,
-      retainerPrice ? `Optional retainer selected: ${body.quote.suggestedRetainerTier} at ${formatMoney(retainerPrice)}/month` : `Optional retainer declined at checkout: ${body.quote.suggestedRetainerTier}`,
+      retainerPrice ? `Optional retainer selected for follow-up setup: ${body.quote.suggestedRetainerTier} at ${formatMoney(retainerPrice)}/month` : `Optional retainer declined at checkout: ${body.quote.suggestedRetainerTier}`,
       ...body.quote.suggestedAddOns.map((addOn) => `Suggested add-on: ${addOn}`)
     ];
 
@@ -80,6 +80,9 @@ export async function POST(request: Request) {
         depositDue,
         total,
         retainerRecommendation: retainerPrice ? `${body.quote.suggestedRetainerTier}: ${formatMoney(retainerPrice)}/month selected` : `${body.quote.suggestedRetainerTier}: optional, not included`,
+        retainerSelected: Boolean(retainerPrice),
+        retainerTier: body.quote.suggestedRetainerTier,
+        retainerMonthlyAmount: retainerPrice,
         timelineEstimate: body.quote.timeframe,
         terms:
           "This estimate is AI-generated and may be adjusted after manual review depending on scope, integrations, content, timeline, and technical requirements.",
@@ -91,20 +94,6 @@ export async function POST(request: Request) {
               unitAmount: buildPrice,
               totalAmount: buildPrice
             },
-            ...(retainerPrice
-              ? [{
-                  description: `${body.quote.suggestedRetainerTier} - Optional Monthly Services`,
-                  quantity: 1,
-                  unitAmount: retainerPrice,
-                  totalAmount: retainerPrice
-                }]
-              : []),
-            {
-              description: "Deposit due to reserve production window",
-              quantity: 1,
-              unitAmount: depositDue,
-              totalAmount: depositDue
-            }
           ]
         }
       }

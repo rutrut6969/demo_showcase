@@ -135,6 +135,7 @@ export async function getAdminPortalData() {
         paid: money(invoice.payments.filter((payment) => payment.status === "PAID").reduce((sum, payment) => sum + payment.amount, 0)),
         summary: invoice.projectSummary,
         items: invoice.lineItems.map((item) => `${item.description}: ${money(item.totalAmount)}`).join("; ") || "-",
+        retainer: invoice.retainerSelected ? `${invoice.retainerTier || "Retainer"}${invoice.retainerMonthlyAmount ? ` at ${money(invoice.retainerMonthlyAmount)}/month` : ""}` : invoice.retainerRecommendation || "Not selected",
         adminNotes: invoice.adminNotes || "-",
         reviewed: invoice.reviewedAt?.toLocaleDateString() || "-",
         canDeleteIncomplete: invoice.payments.some((payment) => payment.status === "PAID") || invoice.status === "PAID" || invoice.status === "DEPOSIT_PAID" ? "No" : "Yes"

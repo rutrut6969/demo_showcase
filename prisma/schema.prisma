@@ -297,6 +297,9 @@ model Invoice {
   depositDue            Int
   total                 Int
   retainerRecommendation String?
+  retainerSelected      Boolean           @default(false)
+  retainerTier          String?
+  retainerMonthlyAmount Int?
   timelineEstimate      String?
   terms                 String
   squareInvoiceId       String?
@@ -332,12 +335,15 @@ model PaymentRecord {
   invoice         Invoice       @relation(fields: [invoiceId], references: [id])
   amount          Int
   status          PaymentStatus @default(PENDING)
+  idempotencyKey  String?
   squarePaymentId String?
   squareOrderId   String?
   paymentMethod   String?
   metadata        Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+
+  @@index([idempotencyKey])
 }
 
 model Retainer {

@@ -328,7 +328,7 @@ function InvoicesPanel({ data, actionToken }: { data: AdminPortalData; actionTok
 
   return (
     <div className="space-y-5">
-      <ResponsiveTable title="Square-backed invoices" headers={["Invoice", "Client", "Status", "Total", "Deposit", "Paid", "Reviewed"]} rows={data.invoices.map((invoice) => [invoice.invoice, invoice.client, invoice.status, invoice.total, invoice.deposit, invoice.paid, invoice.reviewed])} />
+      <ResponsiveTable title="Square-backed invoices" headers={["Invoice", "Client", "Status", "Total", "Deposit", "Paid", "Retainer", "Reviewed"]} rows={data.invoices.map((invoice) => [invoice.invoice, invoice.client, invoice.status, invoice.total, invoice.deposit, invoice.paid, invoice.retainer, invoice.reviewed])} />
       <DataPanel title="Invoice review controls">
         {status ? <p className="mb-3 rounded-lg border border-white/10 bg-white/8 p-3 text-sm text-slate-200">{status}</p> : null}
         <div className="grid gap-3">
@@ -339,6 +339,7 @@ function InvoicesPanel({ data, actionToken }: { data: AdminPortalData; actionTok
                   <p className="font-semibold text-white">{invoice.invoice} · {invoice.client}</p>
                   <p className="mt-1 text-sm text-slate-300">{invoice.summary}</p>
                   <p className="mt-2 text-xs text-slate-500">Items: {invoice.items}</p>
+                  <p className="mt-1 text-xs text-slate-500">Retainer: {invoice.retainer}</p>
                   <p className="mt-1 text-xs text-slate-500">Admin notes: {invoice.adminNotes}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">

@@ -21,7 +21,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       include: {
         client: true,
         request: true,
-        lineItems: true
+        lineItems: true,
+        payments: true
       }
     });
 
