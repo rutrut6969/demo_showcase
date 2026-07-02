@@ -423,14 +423,12 @@ This section preserves the large production architecture pass as a step-by-step 
 - Admin invoice review actions exist for approve, revise, deny, cancel, mark reviewed, and delete/archive incomplete checkout.
 - Admin customer management exists for view/list, edit, archive, delete when safe, anonymize paid-history customers, notes, tags, segments, source, consent, and opt-out state.
 - Admin customer exports are protected by admin authentication and support audience filters.
+- Homepage restructure is implemented: live production websites and showcase demos are separated, filterable by All/Production Websites/Showcase Demos, and each card exposes the correct inspect/request actions.
+- K&K Kustom Kreations is represented as a Live Production Website linked directly to the live client site instead of being surfaced as an internal demo project card.
 - README is already treated as the source of truth and has current sections for features, architecture, pricing, retainers, checkout, portal, roadmap/status, technical debt, and changelog.
 
 ### Incomplete Or Needs A Focused Future Pass
 
-- Homepage restructure is not complete. The current homepage has a single Featured Projects area and a separate demo preview, but it does not split into filterable Live Production Websites and Showcase Demos.
-- K&K Kustom Kreations is still represented as the internal `crafted-commerce` demo/featured project instead of a Live Production Website linked directly to the actual client website.
-- Public homepage filters for All, Production Websites, and Showcase Demos do not exist.
-- Showcase cards do not consistently expose both `View Demo` and `Request Similar Website` actions in the homepage structure requested by the pass.
 - The quote modal is not yet the requested six-step guided AI consultation. It is a single modal form with contact, business, budget, timeline, features, notes, and quote preview.
 - Consultation progress indicator, step navigation, save-progress behavior, and form-resume behavior are not implemented.
 - Website type selection does not yet include the full requested dropdown list, and demo-specific recommended features are not pre-selected.
@@ -455,6 +453,9 @@ This section preserves the large production architecture pass as a step-by-step 
 Implemented:
 
 - Public landing page and demo showcase.
+- Homepage split between Live Production Websites and Showcase Demos with All/Production Websites/Showcase Demos filters.
+- Production website cards with direct `Visit Website` links and `Request Similar Website` quote actions.
+- Showcase demo cards with `View Demo` and `Request Similar Website` actions.
 - Responsive demo layouts.
 - Project request capture with client upsert.
 - AI quote generation with OpenAI plus safe fallback.
@@ -517,6 +518,7 @@ Technical Debt:
 Production Ready:
 
 - Public demo showcase.
+- Public homepage separation for Live Production Websites and Showcase Demos.
 - Request capture.
 - Admin authentication/logout.
 - Admin API protection.
@@ -550,7 +552,96 @@ Planned:
 - Refund UI.
 - Automated route and payment tests.
 
+## Immediate Focus
+
+The following systems should be completed before moving on to additional features.
+
+### Completed Priority 1
+- Homepage restructure
+- Production websites vs showcase demos
+- K&K migration
+
+### Priority 2
+- AI consultation modal redesign
+- Website type dropdown
+- Demo auto-selection
+- Multi-step consultation
+
+### Priority 3
+- Budget-aware AI recommendations
+- Full/budget/phased quote options
+- Financing recommendations
+
+### Priority 4
+- Invoice timeline system
+- Remaining balance workflow
+- Admin remaining balance links
+
+### Priority 5
+- Dashboard clickable cards
+- Admin module cleanup
+- Remove placeholder interfaces
+
+No new major features should be added until the current Immediate Focus items are completed.
+
+## Future Obsidian Core Integration
+
+Planned future integrations:
+
+- Obsidian Core CRM
+- Prospecting Engine
+- Executive Dashboard
+- Obsidian POS
+- Marketing Automation
+- Obsidian Customer Portal
+- Project Management System
+
+Current implementation should avoid hard-coded assumptions that prevent future integration.
+
+## Production Requirements
+
+The following requirements must be satisfied before public production launch:
+
+- npm run build passes
+- npm ci passes
+- TypeScript passes
+- Prisma validate passes
+- Square sandbox testing complete
+- Remaining balance workflow complete
+- Invoice timeline complete
+- Client portal complete
+- Dashboard placeholders removed
+- Retainer billing verified
+- Backup strategy documented
+- Production environment variables documented
+- README updated
+
+## Development Rules
+
+1. Mobile-first development.
+2. No dead buttons.
+3. No placeholder functionality in production.
+4. AI never determines final pricing.
+5. Server determines all pricing.
+6. Financial calculations must be server-side.
+7. README is the source of truth.
+8. New features must update the README.
+9. New APIs must be documented.
+10. New database fields must be documented.
+11. Customer data must be protected.
+12. Admin routes must require authentication.
+13. Client routes must require ownership validation.
+14. Payment systems must be idempotent.
+15. Production features must have error states.
+
 ## Changelog
+
+2026-07-02:
+
+- Restructured the homepage so Live Production Websites and Showcase Demos are separate, filterable sections.
+- Moved K&K Kustom Kreations into the Live Production Websites lane with a direct live-site link and production-site quote metadata.
+- Added explicit `Visit Website`, `View Demo`, and `Request Similar Website` actions so homepage cards no longer rely on one combined project link.
+- Validated this pass with ESLint, TypeScript, and `next build`.
 
 2026-06-29:
 

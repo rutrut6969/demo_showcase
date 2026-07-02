@@ -38,13 +38,6 @@ export const featuredProjects = [
     link: "/demos?demo=harbor-family-practice"
   },
   {
-    name: "K&K Kustom Kreations",
-    status: "Commerce Ready",
-    description: "Handmade vendor commerce workflow with product catalog, events, inventory, and AI-assisted item onboarding.",
-    tags: ["Ecommerce", "Square", "Vendors"],
-    link: "/demos?demo=crafted-commerce"
-  },
-  {
     name: "Obsidian Tech E.R.",
     status: "Active Demo",
     description: "Emergency mobile repair intake system with quote capture, device diagnostics, deposit, and technician workflow.",
@@ -64,6 +57,34 @@ export const featuredProjects = [
     description: "Full-stack lead generation, demo showcase, AI quote, invoice, CRM, and internal operations platform.",
     tags: ["Next.js", "Prisma", "AI Quotes"],
     link: "/demos"
+  }
+];
+
+export type ProductionWebsiteData = {
+  name: string;
+  status: string;
+  builtBy: string;
+  description: string;
+  tags: string[];
+  liveUrl: string;
+  requestPackage: string;
+  sourcePage: string;
+  estimatedComplexity: ComplexityLevel;
+  palette: [string, string, string];
+};
+
+export const productionWebsites: ProductionWebsiteData[] = [
+  {
+    name: "K&K Kustom Kreations",
+    status: "Live Production Website",
+    builtBy: "Built by Obsidian Systems",
+    description: "A live handmade vendor storefront for product discovery, customer trust, and production-ready commerce expansion.",
+    tags: ["Ecommerce", "Handmade goods", "Production site"],
+    liveUrl: "https://kkkustomcreations-rutrut6969s-projects.vercel.app",
+    requestPackage: "Commerce Launch",
+    sourcePage: "production-website:k-and-k-kustom-kreations",
+    estimatedComplexity: "MODERATE",
+    palette: ["#F7F2EC", "#D9B8A1", "#8DAA91"]
   }
 ];
 

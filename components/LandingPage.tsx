@@ -2,16 +2,22 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, Bot, CreditCard, DatabaseZap, LockKeyhole, Menu, Sparkles, X } from "lucide-react";
+import { ArrowRight, Bot, CreditCard, DatabaseZap, ExternalLink, LockKeyhole, Menu, Sparkles, X } from "lucide-react";
 import { Badge, Button, Section, StatCard } from "@/components/ui";
 import { RequestQuoteModal, type RequestMetadata } from "@/components/RequestQuoteModal";
-import { demoTemplates, featuredProjects } from "@/lib/data";
+import { demoTemplates, productionWebsites } from "@/lib/data";
 import { demoMiniSites } from "@/lib/demo-mini-sites";
 import { defaultPricingRules, formatCents } from "@/lib/pricing-config";
+
+type ShowcaseFilter = "all" | "production" | "demos";
 
 export function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [request, setRequest] = useState<RequestMetadata | null>(null);
+  const [showcaseFilter, setShowcaseFilter] = useState<ShowcaseFilter>("all");
+
+  const showProduction = showcaseFilter === "all" || showcaseFilter === "production";
+  const showDemos = showcaseFilter === "all" || showcaseFilter === "demos";
 
   return (
     <main className="relative overflow-hidden">
@@ -28,8 +34,8 @@ export function LandingPage() {
             </div>
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-slate-300 lg:flex">
-            <a href="#projects" className="hover:text-white">Projects</a>
-            <Link href="/demos" className="hover:text-white">Demos</Link>
+            <a href="#production-websites" className="hover:text-white">Production Websites</a>
+            <a href="#showcase-demos" className="hover:text-white">Showcase Demos</a>
             <a href="#retainers" className="hover:text-white">Retainers</a>
           </nav>
           <div className="hidden lg:block">
@@ -58,8 +64,8 @@ export function LandingPage() {
             </div>
             <div className="mt-8 grid gap-3 text-slate-200">
               {[
-                ["Projects", "#projects"],
-                ["Demos", "/demos"],
+                ["Production Websites", "#production-websites"],
+                ["Showcase Demos", "#showcase-demos"],
                 ["Retainers", "#retainers"]
               ].map(([label, href]) => (
                 <Link key={label} href={href} onClick={() => setMobileOpen(false)} className="rounded-lg border border-white/10 bg-white/7 px-4 py-3">
@@ -140,62 +146,137 @@ export function LandingPage() {
         </div>
       </Section>
 
-      <Section id="projects">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <Section id="production-websites">
+        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
-            <Badge>Featured projects</Badge>
-            <h2 className="mt-4 text-3xl font-semibold text-white">Built to show real operational possibilities.</h2>
+            <Badge>Public work</Badge>
+            <h2 className="mt-4 text-3xl font-semibold text-white">Live production websites and showcase demos now live in their own lanes.</h2>
+            <p className="mt-3 max-w-3xl text-slate-300">
+              Production websites link directly to real live builds. Showcase demos stay inside this platform so prospects can preview a business direction and request a similar system.
+            </p>
           </div>
-          <Link href="/demos" className="text-sm font-semibold text-obsidian-green hover:text-white">
-            View demo showcase
-          </Link>
+          <div className="grid grid-cols-3 gap-2 rounded-lg border border-white/10 bg-white/[0.055] p-1 text-sm font-semibold text-slate-300 sm:flex">
+            {[
+              ["all", "All"],
+              ["production", "Production Websites"],
+              ["demos", "Showcase Demos"]
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setShowcaseFilter(value as ShowcaseFilter)}
+                className={`focus-ring min-h-11 rounded-md px-3 py-2 transition ${
+                  showcaseFilter === value ? "bg-obsidian-green text-obsidian-950" : "hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {featuredProjects.map((project) => (
-            <Link
-              key={project.name}
-              href={project.link}
-              className="glass group flex min-h-[260px] flex-col rounded-lg p-5 transition duration-300 hover:-translate-y-1 hover:border-obsidian-green/35"
-            >
-              <ProjectPreview name={project.name} />
-              <Badge className="mt-4 w-fit">{project.status}</Badge>
-              <h3 className="mt-4 text-lg font-semibold text-white">{project.name}</h3>
-              <p className="mt-2 flex-1 text-sm leading-6 text-slate-300">{project.description}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {project.tags.map((tag) => (
-                  <span key={tag} className="rounded-full bg-white/8 px-2 py-1 text-[11px] text-slate-300">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </Link>
-          ))}
-        </div>
-      </Section>
 
-      <Section className="py-10">
-        <div className="glass rounded-lg p-6 sm:p-8">
-          <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
-            <div>
-              <Badge>Demo showcase preview</Badge>
-              <h2 className="mt-4 text-3xl font-semibold text-white">Ten complete business directions, one request funnel.</h2>
-              <p className="mt-4 text-slate-300">
-                Every demo includes a notice banner, multiple UI sections, business-specific CTAs, and metadata-aware request buttons.
-              </p>
+        {showProduction ? (
+          <div className="mt-8" id="production-website-cards">
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-obsidian-green">Live Production Websites</p>
+                <h3 className="mt-2 text-2xl font-semibold text-white">Real client-facing websites.</h3>
+              </div>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {demoTemplates.slice(0, 6).map((demo) => (
-                <Link key={demo.slug} href={`/demos?demo=${demo.slug}`} className="group overflow-hidden rounded-lg border border-white/10 bg-white/6 transition duration-300 hover:-translate-y-1 hover:border-obsidian-green/35 hover:bg-white/10 hover:shadow-glow">
-                  <DemoPreview demoSlug={demo.slug} />
-                  <div className="p-4">
-                    <p className="text-sm font-semibold text-white">{demo.name}</p>
-                    <p className="mt-1 text-xs text-slate-400">{demo.type}</p>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {productionWebsites.map((site) => (
+                <article key={site.name} className="glass flex min-h-[340px] flex-col rounded-lg p-5">
+                  <ProductionPreview palette={site.palette} />
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <Badge className="border-obsidian-green/35 bg-obsidian-green/10 text-obsidian-green">{site.status}</Badge>
+                    <span className="text-xs font-semibold text-slate-400">{site.builtBy}</span>
                   </div>
-                </Link>
+                  <h3 className="mt-4 text-xl font-semibold text-white">{site.name}</h3>
+                  <p className="mt-2 flex-1 text-sm leading-6 text-slate-300">{site.description}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {site.tags.map((tag) => (
+                      <span key={tag} className="rounded-full bg-white/8 px-2 py-1 text-[11px] text-slate-300">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                    <a
+                      href={site.liveUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-obsidian-green/30 bg-obsidian-green text-sm font-semibold text-obsidian-950 shadow-greenGlow transition hover:bg-[#59df86]"
+                    >
+                      Visit Website <ExternalLink className="h-4 w-4" />
+                    </a>
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        setRequest({
+                          selectedDemo: site.name,
+                          demoCategory: "Live production website",
+                          recommendedPackage: site.requestPackage,
+                          sourcePage: site.sourcePage,
+                          estimatedComplexity: site.estimatedComplexity
+                        })
+                      }
+                    >
+                      Request Similar Website
+                    </Button>
+                  </div>
+                </article>
               ))}
             </div>
           </div>
-        </div>
+        ) : null}
+
+        {showDemos ? (
+          <div className="mt-10" id="showcase-demos">
+            <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-obsidian-purple">Showcase Demos</p>
+                <h3 className="mt-2 text-2xl font-semibold text-white">Interactive business directions.</h3>
+              </div>
+              <Link href="/demos" className="text-sm font-semibold text-obsidian-green hover:text-white">
+                Open full demo gallery
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {demoTemplates.map((demo) => (
+                <article key={demo.slug} className="group flex min-h-[330px] flex-col overflow-hidden rounded-lg border border-white/10 bg-white/6 transition duration-300 hover:-translate-y-1 hover:border-obsidian-green/35 hover:bg-white/10 hover:shadow-glow">
+                  <DemoPreview demoSlug={demo.slug} />
+                  <div className="flex flex-1 flex-col p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{demo.type}</p>
+                    <h3 className="mt-2 text-lg font-semibold text-white">{demo.name}</h3>
+                    <p className="mt-2 flex-1 text-sm leading-6 text-slate-300">{demo.description}</p>
+                    <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                      <Link
+                        href={`/demos?demo=${demo.slug}`}
+                        className="focus-ring inline-flex min-h-11 items-center justify-center rounded-lg border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/16"
+                      >
+                        View Demo
+                      </Link>
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          setRequest({
+                            selectedDemo: demo.name,
+                            demoCategory: demo.type,
+                            recommendedPackage: demo.recommendedPackage,
+                            sourcePage: `homepage-showcase:${demo.slug}`,
+                            estimatedComplexity: demo.complexity
+                          })
+                        }
+                      >
+                        Request Similar Website
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </Section>
 
       <Section>
@@ -266,17 +347,7 @@ export function LandingPage() {
   );
 }
 
-function ProjectPreview({ name }: { name: string }) {
-  const palette = name.includes("K&K")
-    ? ["#F7F2EC", "#D9B8A1", "#8DAA91"]
-    : name.includes("Tech")
-      ? ["#0B0F14", "#7C3AED", "#22C55E"]
-      : name.includes("coffee")
-        ? ["#2E1B12", "#B9854D", "#F4E7D1"]
-        : name.includes("Harbor")
-          ? ["#0F172A", "#38BDF8", "#DFF6FF"]
-          : ["#0B0F14", "#7C3AED", "#22C55E"];
-
+function ProductionPreview({ palette }: { palette: [string, string, string] }) {
   return (
     <div className="relative h-28 overflow-hidden rounded-lg border border-white/10" style={{ background: `linear-gradient(135deg, ${palette[0]}, ${palette[1]})` }}>
       <div className="absolute inset-3 rounded border border-white/20 bg-white/10 p-2">
