@@ -425,16 +425,14 @@ This section preserves the large production architecture pass as a step-by-step 
 - Admin customer exports are protected by admin authentication and support audience filters.
 - Homepage restructure is implemented: live production websites and showcase demos are separated, filterable by All/Production Websites/Showcase Demos, and each card exposes the correct inspect/request actions.
 - K&K Kustom Kreations is represented as a Live Production Website linked directly to the live client site instead of being surfaced as an internal demo project card.
+- AI consultation modal is implemented as a six-step mobile-first guided flow with progress, step navigation, local saved progress, demo-aware defaults, website type selection, recommended feature preselection, contact review, and quote generation.
 - README is already treated as the source of truth and has current sections for features, architecture, pricing, retainers, checkout, portal, roadmap/status, technical debt, and changelog.
 
 ### Incomplete Or Needs A Focused Future Pass
 
-- The quote modal is not yet the requested six-step guided AI consultation. It is a single modal form with contact, business, budget, timeline, features, notes, and quote preview.
-- Consultation progress indicator, step navigation, save-progress behavior, and form-resume behavior are not implemented.
-- Website type selection does not yet include the full requested dropdown list, and demo-specific recommended features are not pre-selected.
 - AI system prompt still frames the model as generating conservative project estimates rather than the full senior solutions consultant prompt with risks, budget concerns, phased plans, and financing recommendations.
 - Budget-aware output is incomplete. The current quote returns one recommended estimate rather than distinct full solution, budget solution, and phased solution options when the budget is too low.
-- AI processing UX is partial. There is loading state and fallback, but not rotating loading messages, animated progress bar, step indicator, 10-30 second expectation text, delayed-state message, or explicit retry flow.
+- AI processing UX is partial. The consultation now has loading state, rotating loading messages, progress UI, and fallback behavior, but not 10-30 second expectation text, delayed-state messaging, or explicit retry flow.
 - Payment plan and future financing messaging are not fully modeled in quote output, checkout, or admin workflows.
 - Client portal is partial. It currently covers login/claim, saved cards, retainer status, and saved-card balance payment APIs, but not a full portal dashboard with invoice list, project status, timeline, file sharing, invoice downloads, or support requests.
 - Invoice timeline is incomplete. The schema has timestamps for created/viewed/approved/reviewed/cancelled/archived and payment records, but there is no unified customer/admin timeline for created, viewed, approved, deposit paid, project started, balance sent, final payment, retainer activated, and retainer canceled.
@@ -456,6 +454,7 @@ Implemented:
 - Homepage split between Live Production Websites and Showcase Demos with All/Production Websites/Showcase Demos filters.
 - Production website cards with direct `Visit Website` links and `Request Similar Website` quote actions.
 - Showcase demo cards with `View Demo` and `Request Similar Website` actions.
+- Six-step AI consultation modal with progress, local saved progress, website type selection, and demo-aware recommended feature defaults.
 - Responsive demo layouts.
 - Project request capture with client upsert.
 - AI quote generation with OpenAI plus safe fallback.
@@ -561,7 +560,7 @@ The following systems should be completed before moving on to additional feature
 - Production websites vs showcase demos
 - K&K migration
 
-### Priority 2
+### Completed Priority 2
 - AI consultation modal redesign
 - Website type dropdown
 - Demo auto-selection
@@ -642,6 +641,9 @@ The following requirements must be satisfied before public production launch:
 - Moved K&K Kustom Kreations into the Live Production Websites lane with a direct live-site link and production-site quote metadata.
 - Added explicit `Visit Website`, `View Demo`, and `Request Similar Website` actions so homepage cards no longer rely on one combined project link.
 - Validated this pass with ESLint, TypeScript, and `next build`.
+- Replaced the single quote form with a six-step AI consultation modal covering direction, website type, features, budget/timeline, contact, and review.
+- Added local saved consultation progress, demo auto-selection, website type inference, and demo-aware recommended feature preselection.
+- Verified the consultation modal at mobile, tablet, and desktop widths with Playwright overflow and step-navigation checks.
 
 2026-06-29:
 
