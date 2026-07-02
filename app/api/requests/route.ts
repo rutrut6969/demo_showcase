@@ -83,6 +83,20 @@ export async function POST(request: Request) {
       }
     });
 
+    const quoteRawResponse =
+      quote.rawResponse && typeof quote.rawResponse === "object"
+        ? {
+            ...(quote.rawResponse as Record<string, unknown>),
+            budgetAssessment: quote.budgetAssessment,
+            recommendationOptions: quote.recommendationOptions,
+            paymentRecommendations: quote.paymentRecommendations
+          }
+        : {
+            budgetAssessment: quote.budgetAssessment,
+            recommendationOptions: quote.recommendationOptions,
+            paymentRecommendations: quote.paymentRecommendations
+          };
+
     const projectRequest = await prisma.projectRequest.create({
       data: {
         clientId: client.id,
@@ -130,7 +144,7 @@ export async function POST(request: Request) {
             suggestedAddOns: quote.suggestedAddOns,
             scopeSummary: quote.scopeSummary,
             notesForManualReview: quote.notesForManualReview,
-            rawResponse: quote.rawResponse as object
+            rawResponse: quoteRawResponse
           }
         }
       },
@@ -145,7 +159,16 @@ export async function POST(request: Request) {
       }
     }).catch(() => undefined);
 
-    return NextResponse.json({ requestId: projectRequest.id, quote: projectRequest.aiQuote, persisted: true });
+    return NextResponse.json({
+      requestId: projectRequest.id,
+      quote: {
+        ...projectRequest.aiQuote,
+        budgetAssessment: quote.budgetAssessment,
+        recommendationOptions: quote.recommendationOptions,
+        paymentRecommendations: quote.paymentRecommendations
+      },
+      persisted: true
+    });
   } catch (error) {
     return NextResponse.json({
       requestId: `local-${Date.now()}`,

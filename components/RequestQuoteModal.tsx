@@ -35,8 +35,21 @@ type QuoteResult = {
     suggestedAddOns: string[];
     scopeSummary: string;
     notesForManualReview: string;
+    budgetAssessment?: string;
+    recommendationOptions?: QuoteRecommendationOption[];
+    paymentRecommendations?: string[];
   };
   persisted?: boolean;
+};
+
+type QuoteRecommendationOption = {
+  label: string;
+  fit: "FULL" | "BUDGET" | "PHASED";
+  estimatedBuildPrice: number;
+  summary: string;
+  includedFeatures: string[];
+  deferredFeatures: string[];
+  nextStep: string;
 };
 
 type ConsultationForm = {
@@ -384,7 +397,14 @@ export function RequestQuoteModal({
           suggestedRetainerTier: "Essential Retainer",
           suggestedAddOns: ["Analytics setup", "Managed platform onboarding"],
           scopeSummary: `A tailored platform request for ${selectedDemo} with ${featureSummary || "core launch features"}.`,
-          notesForManualReview: "The local request API was unavailable, so this temporary estimate was generated in the browser."
+          notesForManualReview: "The local request API was unavailable, so this temporary estimate was generated in the browser.",
+          budgetAssessment: "The browser fallback cannot compare live pricing rules, so Obsidian Systems should confirm budget fit during manual review.",
+          recommendationOptions: buildLocalRecommendationOptions(selectedDemoMetadata.recommendedPackage || "Custom Platform Build", features),
+          paymentRecommendations: [
+            "Deposit path: reserve the production window with a deposit after manual review.",
+            "Payment plan path: milestone payment options can be discussed before final checkout.",
+            "Afterpay/Clearpay path: available only when Square eligibility allows it."
+          ]
         }
       });
       trackPlatformEvent("AIQuoteGenerated", {
@@ -617,6 +637,34 @@ export function RequestQuoteModal({
                     <Info label="Promotional price" value={result.quote.promotionalPrice ? formatCurrency(result.quote.promotionalPrice) : "No active promotion"} />
                   </div>
                   {result.quote.pricingExplanation ? <p className="rounded-lg border border-obsidian-green/25 bg-obsidian-green/10 p-4 text-sm leading-6 text-emerald-100">{result.quote.pricingExplanation}</p> : null}
+                  {result.quote.budgetAssessment ? (
+                    <div className="rounded-lg border border-amber-300/25 bg-amber-300/10 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">Budget assessment</p>
+                      <p className="mt-2 text-sm leading-6 text-amber-50">{result.quote.budgetAssessment}</p>
+                    </div>
+                  ) : null}
+                  {result.quote.recommendationOptions?.length ? (
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Recommended paths</p>
+                      {result.quote.recommendationOptions.map((option) => (
+                        <div key={option.fit} className="rounded-lg border border-white/15 bg-slate-900/90 p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-semibold text-white">{option.label}</p>
+                              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-obsidian-green">{option.fit.replace("_", " ")}</p>
+                            </div>
+                            <p className="text-sm font-semibold text-white">{formatCurrency(option.estimatedBuildPrice)}</p>
+                          </div>
+                          <p className="mt-3 text-sm leading-6 text-slate-300">{option.summary}</p>
+                          <div className="mt-3 grid gap-3 text-xs text-slate-300 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                            <FeatureList title="Included" items={option.includedFeatures} />
+                            <FeatureList title="Deferred" items={option.deferredFeatures} />
+                          </div>
+                          <p className="mt-3 rounded-md bg-black/30 p-3 text-xs leading-5 text-slate-300">{option.nextStep}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                   <Info label="Complexity" value={result.quote.complexityLevel.replace("_", " ")} />
                   <Info label="Recommended package" value={result.quote.recommendedPackage} />
                   <div className="rounded-lg border border-white/15 bg-slate-900/90 p-4">
@@ -639,6 +687,19 @@ export function RequestQuoteModal({
                     </div>
                   </div>
                   <p className="rounded-lg border border-white/15 bg-black/50 p-4 text-sm text-slate-300">{result.quote.scopeSummary}</p>
+                  {result.quote.paymentRecommendations?.length ? (
+                    <div className="rounded-lg border border-white/15 bg-black/50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Payment guidance</p>
+                      <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
+                        {result.quote.paymentRecommendations.map((recommendation) => (
+                          <li key={recommendation} className="flex gap-2">
+                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-obsidian-green" />
+                            {recommendation}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   <div className="rounded-lg border border-white/15 bg-slate-900/90 p-4">
                     <p className="text-sm font-semibold text-white">Next step</p>
                     <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -752,6 +813,25 @@ function ReviewLine({ label, value }: { label: string; value: string }) {
   );
 }
 
+function FeatureList({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div>
+      <p className="font-semibold text-slate-100">{title}</p>
+      {items.length ? (
+        <ul className="mt-2 space-y-1">
+          {items.map((item) => (
+            <li key={item} className="leading-5">
+              {item}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 leading-5 text-slate-500">None</p>
+      )}
+    </div>
+  );
+}
+
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -759,4 +839,40 @@ function Info({ label, value }: { label: string; value: string }) {
       <p className="mt-1 text-sm font-semibold text-white">{value}</p>
     </div>
   );
+}
+
+function buildLocalRecommendationOptions(recommendedPackage: string, features: string[]): QuoteRecommendationOption[] {
+  const selectedFeatures = features.length ? features : ["Landing page", "Lead capture", "Analytics"];
+  const essentials = selectedFeatures.slice(0, Math.max(2, Math.ceil(selectedFeatures.length * 0.55)));
+  const deferred = selectedFeatures.filter((feature) => !essentials.includes(feature));
+
+  return [
+    {
+      label: "Full recommended solution",
+      fit: "FULL",
+      estimatedBuildPrice: 250000,
+      summary: `Build the complete ${recommendedPackage} scope after manual confirmation.`,
+      includedFeatures: selectedFeatures,
+      deferredFeatures: [],
+      nextStep: "Use this path when the full requested scope is the right launch target."
+    },
+    {
+      label: "Budget-fit launch",
+      fit: "BUDGET",
+      estimatedBuildPrice: 150000,
+      summary: "Start with the smallest useful launch and defer lower-priority automation.",
+      includedFeatures: essentials,
+      deferredFeatures: deferred.length ? deferred : ["Advanced automation", "Expanded integrations"],
+      nextStep: "Use this path when budget is firm and the business needs a practical first release."
+    },
+    {
+      label: "Phased build plan",
+      fit: "PHASED",
+      estimatedBuildPrice: 175000,
+      summary: "Launch core functionality first, then schedule the remaining workflow in follow-up phases.",
+      includedFeatures: essentials,
+      deferredFeatures: Array.from(new Set([...deferred, "Advanced reporting", "Post-launch optimization"])),
+      nextStep: "Use this path when the full system is right but better delivered in milestones."
+    }
+  ];
 }

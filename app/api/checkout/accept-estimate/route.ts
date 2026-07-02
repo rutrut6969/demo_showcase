@@ -18,7 +18,18 @@ const schema = z.object({
     recommendedPackage: z.string(),
     suggestedRetainerTier: z.string(),
     suggestedAddOns: z.array(z.string()).default([]),
-    scopeSummary: z.string()
+    scopeSummary: z.string(),
+    budgetAssessment: z.string().optional(),
+    paymentRecommendations: z.array(z.string()).optional(),
+    recommendationOptions: z.array(z.object({
+      label: z.string(),
+      fit: z.enum(["FULL", "BUDGET", "PHASED"]),
+      estimatedBuildPrice: z.number().int(),
+      summary: z.string(),
+      includedFeatures: z.array(z.string()).default([]),
+      deferredFeatures: z.array(z.string()).default([]),
+      nextStep: z.string()
+    })).optional()
   })
 });
 
@@ -66,6 +77,9 @@ export async function POST(request: Request) {
       `Recommended package: ${body.quote.recommendedPackage}`,
       `One-time build price: ${formatMoney(buildPrice)}`,
       retainerPrice ? `Optional retainer selected for follow-up setup: ${body.quote.suggestedRetainerTier} at ${formatMoney(retainerPrice)}/month` : `Optional retainer declined at checkout: ${body.quote.suggestedRetainerTier}`,
+      ...(body.quote.budgetAssessment ? [`Budget assessment: ${body.quote.budgetAssessment}`] : []),
+      ...(body.quote.recommendationOptions || []).map((option) => `${option.label}: ${option.summary}`),
+      ...(body.quote.paymentRecommendations || []).map((recommendation) => `Payment recommendation: ${recommendation}`),
       ...body.quote.suggestedAddOns.map((addOn) => `Suggested add-on: ${addOn}`)
     ];
 
